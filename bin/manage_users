@@ -17,8 +17,11 @@ Usage: bin/manage_users [--pass password] (--add | --del) user-email
 	Options:
 		--add 	Add user with the specified user-email
 		--del 	Delete user with specified user-email
+		--adduser Create an empty user with profileid
+		--deluser Delete user with profileid
 		--reset Reset user password with specified user-email
 		--pass	Use password from cmdline rather than prompting
+                --list  List users
 `)
   process.exit(1)
 }
@@ -30,6 +33,23 @@ function getPass (argv, action) {
   }
   console.log('Using password from commandline...')
   return argv['pass']
+}
+
+async function createUserProf(argv) {
+	const existing_user = await models.User.findOne({where: {profileid: argv["adduser"]}});
+	// Cannot create already-existing users
+	if(existing_user) {
+		console.log(`User with profileid ${existing_user.profileid} already exists! Aborting ...`);
+		process.exit(2);
+	}
+
+	// Lets try to create, and check success
+	const ref = await models.User.create({profileid: argv["adduser"]});
+	if(ref == undefined) {
+		console.log(`Could not create user with profileid ${argv["adduser"]}`);
+		process.exit(1);
+	} else
+		console.log(`Created user with profileid ${argv["adduser"]}`);
 }
 
 // Using an async function to be able to use await inside
@@ -57,6 +77,16 @@ async function createUser (argv) {
   }
 }
 
+async function listUsers(argv) {
+       const existing_users = await models.User.findAll();
+       if (!existing_users) {
+         console.log("No users in DB");
+         process.exit(1);
+       }
+
+       existing_users.forEach(user => console.log(user.profileid));
+}
+
 // Using an async function to be able to use await inside
 async function deleteUser (argv) {
   // Cannot delete non-existing users
@@ -71,6 +101,22 @@ async function deleteUser (argv) {
   await existing_user.destroy()
   console.log(`Deleted user ${argv['del']} ...`)
 }
+
+// Using an async function to be able to use await inside
+async function deleteUserProf(argv) {
+	// Cannot delete non-existing users
+	const existing_user = await models.User.findOne({where: {profileid: argv["deluser"]}});
+	if(!existing_user) {
+		console.log(`User with e-mail ${argv["del"]} does not exist, cannot delete`);
+		process.exit(1);
+	}
+
+	// Sadly .destroy() does not return any success value with all
+	// backends. See sequelize #4124
+	await existing_user.destroy();
+	console.log(`Deleted user ${argv["deluser"]} ...`);
+}
+
 
 // Using an async function to be able to use await inside
 async function resetUser (argv) {
@@ -88,10 +134,13 @@ async function resetUser (argv) {
 }
 
 const options = {
-  add: createUser,
-  del: deleteUser,
-  reset: resetUser,
-}
+	add: createUser,
+	del: deleteUser,
+	adduser: createUserProf,
+	deluser: deleteUserProf,
+        list: listUsers,
+	reset: resetUser,
+};
 
 // Perform commandline-parsing and always treat 'pass' argument as string
 const argv = minimist(process.argv.slice(2), { string: ['pass'] })
