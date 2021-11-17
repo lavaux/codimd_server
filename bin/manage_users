@@ -13,10 +13,11 @@ function showUsage(tips) {
 
 Command-line utility to create users for email-signin.
 
-Usage: bin/manage_users [--pass password] (--add | --del) user-email
+Usage: bin/manage_users [--pass password] (--add | --del | --superuser) user-email
 	Options:
 		--add 	Add user with the specified user-email
 		--del 	Delete user with specified user-email
+                --superuser Set user as a superuser
 		--adduser Create an empty user with profileid
 		--deluser Delete user with profileid
 		--reset Reset user password with specified user-email
@@ -72,6 +73,18 @@ async function createUser(argv) {
 		process.exit(1);
 	} else
 		console.log(`Created user with email ${argv["add"]}`);
+}
+
+async function setSuperUser(argv) {
+       const existing_user = await models.User.findOne({where: { profileid: argv["superuser"] } });
+       if (!existing_user) {
+         console.log("No such user in DB");
+         process.exit(1);
+       }
+
+       existing_user.superuser = true;
+       await existing_user.save();
+       console.log(`User ${argv["superuser"]} is now a superuser`);
 }
 
 async function listUsers(argv) {
@@ -140,6 +153,7 @@ const options = {
 	deluser: deleteUserProf,
         list: listUsers,
 	reset: resetUser,
+        superuser: setSuperUser,
 };
 
 // Perform commandline-parsing

@@ -2145,7 +2145,7 @@ function updatePermission (newPermission) {
   if (
     personalInfo.userid &&
     window.owner &&
-    personalInfo.userid === window.owner
+    (personalInfo.userid === window.owner || personalInfo.superuser)
   ) {
     label += ' <i class="fa fa-caret-down"></i>'
     ui.infobar.permission.label.removeClass('disabled')
