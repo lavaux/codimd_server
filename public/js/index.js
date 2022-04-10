@@ -1,7 +1,7 @@
 /* eslint-env browser, jquery */
 /* eslint no-console: ["error", { allow: ["warn", "error", "debug"] }] */
 /* global Cookies, moment, serverurl,
-   key, Dropbox, hex2rgb, Visibility */
+   key, Dropbox, Visibility */
 
 import TurndownService from 'turndown'
 import CodeMirror from 'codemirror/lib/codemirror.js'
@@ -14,6 +14,7 @@ import Idle from 'Idle.Js'
 import '../vendor/jquery-textcomplete/jquery.textcomplete'
 
 import { ot } from '../vendor/ot/ot.min.js'
+import hex2rgb from '../vendor/ot/hex2rgb'
 
 import { saveAs } from 'file-saver'
 import randomColor from 'randomcolor'
@@ -93,6 +94,7 @@ require('../css/slide-preview.css')
 require('../css/site.css')
 
 require('highlight.js/styles/github-gist.css')
+require('./fix-aria-hidden-for-modals')
 
 let defaultTextHeight = 20
 let viewportMargin = 20
@@ -1916,56 +1918,48 @@ $('#snippetExportModalConfirm').click(function () {
   const accesstoken = $('#snippetExportModalAccessToken').val()
   const baseURL = $('#snippetExportModalBaseURL').val()
   const version = $('#snippetExportModalVersion').val()
+  const projectId = $('#snippetExportModalProjects').val()
+  const visibilityValue = $('#snippetExportModalVisibility').val()
 
   const data = {
     title: $('#snippetExportModalTitle').val(),
-    file_name: $('#snippetExportModalFileName').val(),
-    code: editor.getValue(),
-    visibility_level: $('#snippetExportModalVisibility').val(),
+    files: [
+      {
+        file_path: $('#snippetExportModalFileName').val(),
+        content: editor.getValue()
+      }
+    ],
     visibility:
-      $('#snippetExportModalVisibility').val() === '0'
+      visibilityValue === '0'
         ? 'private'
-        : $('#snippetExportModalVisibility').val() === '10'
+        : visibilityValue === '10'
           ? 'internal'
           : 'private'
   }
 
   if (
     !data.title ||
-    !data.file_name ||
-    !data.code ||
-    !data.visibility_level ||
-    !$('#snippetExportModalProjects').val()
+    !data.files[0].file_path ||
+    !data.files[0].content ||
+    !projectId
   ) { return }
   $('#snippetExportModalLoading').show()
-  const fullURL =
-    baseURL +
-    '/api/' +
-    version +
-    '/projects/' +
-    $('#snippetExportModalProjects').val() +
-    '/snippets?access_token=' +
-    accesstoken
-  $.post(fullURL, data, function (ret) {
-    $('#snippetExportModalLoading').hide()
-    $('#snippetExportModal').modal('hide')
-    const redirect =
-      baseURL +
-      '/' +
-      $(
-        "#snippetExportModalProjects option[value='" +
-          $('#snippetExportModalProjects').val() +
-          "']"
-      ).text() +
-      '/snippets/' +
-      ret.id
-    showMessageModal(
-      '<i class="fa fa-gitlab"></i> Export to Snippet',
-      'Export Successful!',
-      redirect,
-      'View Snippet Here',
-      true
-    )
+  const fullURL = `${baseURL}/api/${version}/projects/${projectId}/snippets?access_token=${accesstoken}`
+  $.ajax(fullURL, {
+    data: JSON.stringify(data),
+    contentType: 'application/json',
+    type: 'POST',
+    success: function (ret) {
+      $('#snippetExportModalLoading').hide()
+      $('#snippetExportModal').modal('hide')
+      showMessageModal(
+        '<i class="fa fa-gitlab"></i> Export to Snippet',
+        'Export Successful!',
+        ret.web_url,
+        'View Snippet Here',
+        true
+      )
+    }
   })
 })
 

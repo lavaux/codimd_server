@@ -63,8 +63,14 @@ if (!config.useSSL && config.protocolUseSSL) {
   app.set('trust proxy', 1)
 }
 
+// check if the request is from container healthcheck
+function isContainerHealthCheck (req, _) {
+  return req.headers['user-agent'] === 'hedgedoc-container-healthcheck/1.0' && req.ip === '127.0.0.1'
+}
+
 // logger
 app.use(morgan('combined', {
+  skip: isContainerHealthCheck,
   stream: logger.stream
 }))
 
@@ -206,6 +212,7 @@ app.locals.authProviders = {
   ldap: config.isLDAPEnable,
   ldapProviderName: config.ldap.providerName,
   saml: config.isSAMLEnable,
+  samlProviderName: config.saml.providerName,
   oauth2: config.isOAuth2Enable,
   oauth2ProviderName: config.oauth2.providerName,
   openID: config.isOpenIDEnable,
@@ -285,9 +292,9 @@ function syncAndListen () {
         process.exit(1)
       }
     })
-  }).catch(() => {
+  }).catch((dbError) => {
     if (currentDBTry < maxDBTries) {
-      logger.warn(`Database cannot be reached. Try ${currentDBTry} of ${maxDBTries}.`)
+      logger.warn(`Database cannot be reached. Try ${currentDBTry} of ${maxDBTries}. (${dbError})`)
       currentDBTry++
       setTimeout(function () {
         syncAndListen()

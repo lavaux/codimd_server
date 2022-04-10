@@ -17,9 +17,9 @@ jobs:
           - shellcheck bin/heroku bin/setup
           - sudo apt install -y jq && yarn run jsonlint
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Use Node.js 16
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 16
           cache: yarn
@@ -32,9 +32,9 @@ jobs:
       matrix:
         node-version: [12, 14, 16]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           cache: yarn
@@ -47,15 +47,15 @@ jobs:
       matrix:
         node-version: [12, 14, 16]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
           cache: yarn
       - run: yarn --frozen-lockfile --prefer-offline
       - run: yarn run build
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: github.ref == 'refs/heads/master' && matrix.node-version == '16'
         with:
           name: Prebuild with Node.js ${{ matrix.node-version }}
