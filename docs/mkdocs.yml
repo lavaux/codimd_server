@@ -9,16 +9,10 @@ nav:
   - Home: index.md
   - Installation:
       - 'Getting Started': setup/getting-started.md
-      - Official installation methods:
+      - Official Installation Methods:
           - 'Docker Image': setup/docker.md
           - 'Manual Installation': setup/manual-setup.md
-          - Heroku: setup/heroku.md
-      - Community installation methods:
-          - 'LinuxServer Docker Image': setup/docker-linuxserver.md
-          - 'Helm Chart': setup/kubernetes-helm.md
-          - 'YunoHost App': setup/yunohost.md
-          - 'Cloudron App': setup/cloudron.md
-          - 'Arch Linux Package': setup/arch-linux.md
+      - 'Community Installation Methods': setup/community.md
   - Guides:
       - 'Reverse Proxy': guides/reverse-proxy.md
       - Authentication:
@@ -33,6 +27,7 @@ nav:
           - Mattermost: guides/auth/mattermost-self-hosted.md
           - Nextcloud: guides/auth/nextcloud.md
           - Twitter: guides/auth/twitter.md
+          - Authelia: guides/auth/authelia.md
       - Media Backend:
           - MinIO: guides/minio-image-upload.md
           - S3: guides/s3-image-upload.md
@@ -41,7 +36,9 @@ nav:
       - Terms of Use Setup: guides/providing-terms.md
   - Configuration: configuration.md
   - References:
-    - 'HedgeDoc Flavored Markdown': references/hfm.md
+      - 'HedgeDoc Flavored Markdown': references/hfm.md
+      - 'Slide Options': references/slide-options.md
+      - 'URL Scheme': references/url-scheme.md
   - Developer:
       - 'Getting Started': dev/getting-started.md
       - API: dev/api.md
@@ -91,3 +88,15 @@ theme:
 extra_css:
   - theme/styles/hedgedoc-custom.css
   - theme/styles/roboto.css
+
+plugins:
+  - redirects:
+      redirect_maps:
+        'setup/docker-linuxserver.md': 'setup/community.md'
+        'setup/kubernetes-helm.md': 'setup/community.md'
+        'setup/yunohost.md': 'setup/community.md'
+        'setup/cloudron.md': 'setup/community.md'
+        'setup/arch-linux.md': 'setup/community.md'
+        'setup/pikapods.md': 'setup/community.md'
+        'setup/heroku.md': 'setup/community.md'
+        'history.md': https://hedgedoc.org/history/details

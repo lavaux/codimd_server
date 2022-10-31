@@ -1,4 +1,37 @@
 # Release Notes
+## <i class="fa fa-tag"></i> 1.9.5 <i class="fa fa-calendar-o"></i> 2022-10-30
+
+### Enhancements
+- Add dark mode toggle in mobile view
+- Replace embedding shortcode regexes with more specific ones to safeguard against XSS attacks
+
+### Bugfixes
+- Fix a crash when using LDAP authentication with custom search attributes (thanks to [@aboettger-tuhh](https://github.com/aboettger-tuhh) for reporting)
+- Fix a crash caused by a long note history when the MySQL database is used
+- Fix `breaks` option not being respected in the publish-view
+- Fix missing syntax highlighting in the markdown editor
+
+### Contributors
+- Bateausurleau (translator)
+- Goncalo (translator)
+- Ívarr Vinter (translator)
+- Oein0219 (translator)
+- [Pol Dellaiera](https://github.com/drupol)
+
+## <i class="fa fa-tag"></i> 1.9.4 <i class="fa fa-calendar-o"></i> 2022-07-10
+
+**Please note:** This release dropped support for Node 12, which is end-of-life since April 2022.
+You now need at least Node 14.13.1 or Node 16 to run HedgeDoc. We don't support more recent versions of Node.
+
+### Enhancements
+- Remove unexpected shell call during migrations
+- More S3 config options: upload folder & public ACL (thanks to [@lautaroalvarez](https://github.com/lautaroalvarez))
+
+### Contributors
+- Al_x (translator)
+- Emmanuel Courreges (translator)
+- paranic (translator)
+- Quentin PAGÈS (translator)
 
 ## <i class="fa fa-tag"></i> 1.9.3 <i class="fa fa-calendar-o"></i> 2022-04-10
 
