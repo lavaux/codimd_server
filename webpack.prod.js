@@ -3,7 +3,7 @@ const htmlexport = require('./webpack.htmlexport')
 const { merge } = require('webpack-merge')
 const path = require('path')
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
-const { ESBuildMinifyPlugin } = require('esbuild-loader')
+const { EsbuildPlugin } = require('esbuild-loader')
 
 module.exports = [
   merge(common, {
@@ -15,8 +15,9 @@ module.exports = [
     },
     optimization: {
       minimizer: [
-        new ESBuildMinifyPlugin({
+        new EsbuildPlugin({
           target: 'es2015',
+          format: "cjs",
           exclude: ['MathJax/extensions/a11y/mathmaps']
         })
       ],
@@ -30,8 +31,9 @@ module.exports = [
     mode: 'production',
     optimization: {
       minimizer: [
-        new ESBuildMinifyPlugin({
-          target: 'es2015'
+        new EsbuildPlugin({
+          target: 'es2015',
+          format: "cjs"
         }),
         new OptimizeCSSAssetsPlugin({})
       ]

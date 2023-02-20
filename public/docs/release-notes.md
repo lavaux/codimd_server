@@ -1,4 +1,20 @@
 # Release Notes
+
+## <i class="fa fa-tag"></i> 1.9.7 <i class="fa fa-calendar-o"></i> 2023-02-19
+
+### Bugfixes
+- Fix note titles with special characters producing invalid file names in user export zip file
+- Fix night-mode toggle not working when page is loaded with night-mode enabled
+
+### Contributors
+- Francesco (translator)
+- Gabriel Santiago Macedo (translator)
+
+## <i class="fa fa-tag"></i> 1.9.6 <i class="fa fa-calendar-o"></i> 2022-11-06
+
+### Bugfixes
+- Fix migrations deleting all notes when SQLite is used
+
 ## <i class="fa fa-tag"></i> 1.9.5 <i class="fa fa-calendar-o"></i> 2022-10-30
 
 ### Enhancements
