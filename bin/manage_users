@@ -116,7 +116,6 @@ async function deleteUser (argv) {
   console.log(`Deleted user ${argv['del']} ...`)
 }
 
-<<<<<<< HEAD
 // Using an async function to be able to use await inside
 async function deleteUserProf(argv) {
 	// Cannot delete non-existing users
