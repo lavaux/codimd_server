@@ -5,6 +5,13 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 
+// This monkey-patches node to use sha256 instead of md4 for crypto.createHash
+// md4 is not available in node 18+ anymore, as that uses modern OpenSSL versions
+// Inspired by https://stackoverflow.com/questions/69394632/webpack-build-failing-with-err-ossl-evp-unsupported/69691525#69691525
+const crypto = require('crypto')
+const cryptoOrigCreateHash = crypto.createHash
+crypto.createHash = algorithm => cryptoOrigCreateHash(algorithm === 'md4' ? 'sha256' : algorithm)
+
 // Fix possible nofile-issues
 const fs = require('fs')
 const gracefulFs = require('graceful-fs')
@@ -28,7 +35,7 @@ module.exports = {
       jQuery: 'jquery',
       'window.jQuery': 'jquery',
       'moment': 'moment',
-      CodeMirror: 'codemirror/lib/codemirror.js'
+      CodeMirror: '@hedgedoc/codemirror-5/lib/codemirror.js'
     }),
     new HtmlWebpackPlugin({
       template: 'public/views/includes/header.ejs',
@@ -175,16 +182,16 @@ module.exports = {
     ],
     'index-styles': [
       path.join(__dirname, 'public/vendor/codemirror-spell-checker/spell-checker.min.css'),
-      path.join(__dirname, 'node_modules/codemirror/lib/codemirror.css'),
-      path.join(__dirname, 'node_modules/codemirror/addon/fold/foldgutter.css'),
-      path.join(__dirname, 'node_modules/codemirror/addon/display/fullscreen.css'),
-      path.join(__dirname, 'node_modules/codemirror/addon/dialog/dialog.css'),
-      path.join(__dirname, 'node_modules/codemirror/addon/scroll/simplescrollbars.css'),
-      path.join(__dirname, 'node_modules/codemirror/addon/search/matchesonscrollbar.css'),
-      path.join(__dirname, 'node_modules/codemirror/theme/monokai.css'),
-      path.join(__dirname, 'node_modules/codemirror/theme/one-dark.css'),
-      path.join(__dirname, 'node_modules/codemirror/mode/tiddlywiki/tiddlywiki.css'),
-      path.join(__dirname, 'node_modules/codemirror/mode/mediawiki/mediawiki.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/lib/codemirror.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/addon/fold/foldgutter.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/addon/display/fullscreen.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/addon/dialog/dialog.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/addon/scroll/simplescrollbars.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/addon/search/matchesonscrollbar.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/theme/monokai.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/theme/one-dark.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/mode/tiddlywiki/tiddlywiki.css'),
+      path.join(__dirname, 'node_modules/@hedgedoc/codemirror-5/mode/mediawiki/mediawiki.css'),
       path.join(__dirname, 'node_modules/spin.js/spin.css'),
       path.join(__dirname, 'public/css/github-extract.css'),
       path.join(__dirname, 'public/vendor/showup/showup.css'),
@@ -304,7 +311,7 @@ module.exports = {
         use: {
           loader: 'imports-loader',
           options: {
-            imports: ['default codemirror CodeMirror']
+            imports: ['default @hedgedoc/codemirror-5 CodeMirror']
           }
         }
       },

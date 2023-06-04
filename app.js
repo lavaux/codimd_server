@@ -75,8 +75,10 @@ app.use(morgan('combined', {
 }))
 
 // Register prometheus metrics endpoint
-app.use(apiMetrics())
-metrics.setupCustomPrometheusMetrics()
+if (config.enableStatsApi) {
+  app.use(apiMetrics())
+  metrics.setupCustomPrometheusMetrics()
+}
 
 // socket io
 const io = require('socket.io')(server, { cookie: false })
@@ -181,7 +183,7 @@ app.use(flash())
 
 // passport
 app.use(passport.initialize())
-app.use(useUnless(['/status', '/metrics'], passport.session()))
+app.use(useUnless(['/status', '/metrics', '/_health'], passport.session()))
 
 // check uri is valid before going further
 app.use(require('./lib/web/middleware/checkURIValid'))
