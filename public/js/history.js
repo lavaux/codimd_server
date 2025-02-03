@@ -1,4 +1,3 @@
-/* eslint-env browser, jquery */
 /* eslint no-console: ["error", { allow: ["warn", "error", "debug"] }] */
 /* global serverurl, moment */
 
@@ -220,7 +219,7 @@ export function getStorageHistory (callback) {
     if (typeof data === 'string') { data = JSON.parse(data) }
     callback(data)
   }
-  // eslint-disable-next-line n/no-callback-literal
+
   callback([])
 }
 

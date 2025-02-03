@@ -1,4 +1,3 @@
-/* eslint-env browser, jquery */
 /* eslint no-console: ["error", { allow: ["warn", "error", "debug"] }] */
 /* global Cookies, moment, serverurl,
    key, Dropbox, Visibility */
@@ -1408,7 +1407,6 @@ ui.modal.revision.on('show.bs.modal', function (e) {
     })
     .fail(function (err) {
       if (debug) {
-        // eslint-disable-next-line no-console
         console.debug(err)
       }
     })
@@ -1530,7 +1528,6 @@ function selectRevision (time) {
     })
     .fail(function (err) {
       if (debug) {
-        // eslint-disable-next-line no-console
         console.debug(err)
       }
     })
@@ -1613,7 +1610,6 @@ ui.modal.snippetImportProjects.change(function () {
     })
     .fail(function (err) {
       if (debug) {
-        // eslint-disable-next-line no-console
         console.debug(err)
       }
     })
