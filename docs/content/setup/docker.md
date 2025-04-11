@@ -6,7 +6,7 @@
     - [Docker Compose](https://docs.docker.com/compose/install/)
 
 The official docker images are [available on quay.io](https://quay.io/repository/hedgedoc/hedgedoc).
-We currently only support the `amd64` architecture.
+We currently support the `amd64` and `arm64` architectures.
 
 
 The easiest way to get started with HedgeDoc and Docker is to use the following `docker-compose.yml`:
@@ -28,7 +28,7 @@ services:
     restart: always
   app:
     # Make sure to use the latest release from https://hedgedoc.org/latest-release
-    image: quay.io/hedgedoc/hedgedoc:1.10.0
+    image: quay.io/hedgedoc/hedgedoc:1.10.2
     environment:
       - CMD_DB_URL=postgres://hedgedoc:password@database:5432/hedgedoc
       - CMD_DOMAIN=localhost
