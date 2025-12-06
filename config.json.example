@@ -95,6 +95,8 @@
             "issuer": "change or delete: identity of the service provider (default: config.serverURL)",
             "identifierFormat": "change or delete: name identifier format (default: 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress')",
             "disableRequestedAuthnContext": "change or delete: true to allow any authentication method, false restricts to password authentication method (default: false)",
+            "wantAssertionsSigned": "change or delete: true to enforce signed assertions, false allows unsigned assertions (default: true)",
+            "wantAuthnResponseSigned": "change or delete: true to enforce signed response, false allows unsigned response (default: true)",
             "groupAttribute": "change or delete: attribute name for group list (ex: memberOf)",
             "requiredGroups": [ "change or delete: group names that allowed" ],
             "externalGroups": [ "change or delete: group names that not allowed" ],
@@ -103,6 +105,19 @@
                "username": "change or delete this: attribute map for `username` (default: NameID)",
                "email": "change or delete this: attribute map for `email` (default: NameID)"
             }
+        },
+        "oauth2": {
+          "baseURL": "https://auth.example.com/",
+          "userProfileURL": "https://auth.example.com/oauth2/userinfo/",
+          "tokenURL": "https://auth.example.com/oauth2/token/",
+          "authorizationURL": "https://auth.example.com/oauth2/authorize/",
+          "clientID": "change-this-id",
+          "clientSecret": "change-this-secret",
+          "scope": "openid profile user",
+          "userProfileUsernameAttr": "preferred_username",
+          "userProfileEmailAttr": "email",
+          "userProfileDisplayNameAttr": "name",
+          "pkce": true
         },
         "imgur": {
             "clientID": "change this"

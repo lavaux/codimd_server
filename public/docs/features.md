@@ -238,15 +238,11 @@ When you’re a carpenter making a beautiful chest of drawers, you’re not goin
 
 {%gist schacon/4277%}
 
-#### SlideShare
-
-{%slideshare briansolis/26-disruptive-technology-trends-2016-2018-56796196 %}
-
 #### PDF
 
 **Caution: this might be blocked by your browser if not using an `https` URL.**
 Note that not all servers allow embedding their content. See [our FAQ](https://docs.hedgedoc.org/faq/#why-cant-i-embed-some-pdfs) for details.
-{%pdf https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf %}
+{%pdf https://pdfobject.com/pdf/sample-3pp.pdf %}
 
 ### MathJax
 

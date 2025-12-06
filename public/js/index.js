@@ -16,7 +16,7 @@ import { ot } from '../vendor/ot/ot.min.js'
 import hex2rgb from '../vendor/ot/hex2rgb'
 
 import { saveAs } from 'file-saver'
-import randomColor from 'randomcolor'
+import chance from 'chance'
 import store from 'store'
 import url from 'wurl'
 import { Spinner } from 'spin.js'
@@ -427,7 +427,7 @@ const supportExtraTags = [
     text: '[random color tag]',
     search: '[]',
     command: function () {
-      const color = randomColor()
+      const color = chance().color()
       return '[color=' + color + ']'
     }
   }
@@ -1079,6 +1079,10 @@ function changeMode (type) {
     // add and update tool bar
     if (!editorInstance.toolBar) {
       editorInstance.addToolBar()
+      const uploadButtonVisible = window.enableUploads === 'all' || (window.enableUploads === 'registered' && personalInfo.login)
+      if (!uploadButtonVisible) {
+        $('#uploadImage').remove()
+      }
     }
     // work around foldGutter might not init properly
     editor.setOption('foldGutter', false)
@@ -2111,11 +2115,11 @@ function updatePermission (newPermission) {
       break
     case 'editable':
       label = '<i class="fa fa-shield"></i> Editable'
-      title = 'Signed people can edit'
+      title = 'Signed-in people can edit'
       break
     case 'limited':
       label = '<i class="fa fa-id-card"></i> Limited'
-      title = 'Signed people can edit (forbid guest)'
+      title = 'Signed-in people can edit (forbid guests)'
       break
     case 'locked':
       label = '<i class="fa fa-lock"></i> Locked'
@@ -2123,7 +2127,7 @@ function updatePermission (newPermission) {
       break
     case 'protected':
       label = '<i class="fa fa-umbrella"></i> Protected'
-      title = 'Only owner can edit (forbid guest)'
+      title = 'Only owner can edit (forbid guests)'
       break
     case 'private':
       label = '<i class="fa fa-hand-stop-o"></i> Private'

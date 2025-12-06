@@ -3,19 +3,17 @@
 
 import Prism from 'prismjs'
 import PDFObject from 'pdfobject'
-import S from 'string'
 import { saveAs } from 'file-saver'
-import escapeHTML from 'escape-html'
+import filterXSS from 'xss'
 
 import getUIElements from './lib/editor/ui-elements'
+import { escapeHtml, unescapeHtml } from './utils'
 
 import markdownit from 'markdown-it'
 import markdownitContainer from 'markdown-it-container'
 
 /* Defined regex markdown it plugins */
 import Plugin from 'markdown-it-regexp'
-
-import 'gist-embed'
 
 require('prismjs/themes/prism.css')
 require('prismjs/components/prism-wiki')
@@ -168,7 +166,11 @@ export function renderTags (view) {
 
 function slugifyWithUTF8 (text) {
   // remove HTML tags and trim spaces
-  let newText = S(text).trim().stripTags().s
+  let newText = filterXSS(text.trim(), {
+    whiteList: {},
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script', 'style']
+  })
   // replace space between words with dashes
   newText = newText.replace(/\s+/g, '-')
   // slugify string to make it valid as an attribute
@@ -231,10 +233,10 @@ window.viewAjaxCallback = null
 // regex for extra tags
 const spaceregex = /\s*/
 const notinhtmltagregex = /(?![^<]*>|[^<>]*<\/)/
-let coloregex = /\[color=([#|(|)|\s|,|\w]*?)\]/
+let coloregex = /\[color=([#()\s,\w]*?)]/
 coloregex = new RegExp(coloregex.source + notinhtmltagregex.source, 'g')
-let nameregex = /\[name=(.*?)\]/
-let timeregex = /\[time=([:|,|+|-|(|)|\s|\w]*?)\]/
+let nameregex = /\[name=(.*?)]/
+let timeregex = /\[time=([:,.+()\s\w-]*?)]/
 const nameandtimeregex = new RegExp(nameregex.source + spaceregex.source + timeregex.source + notinhtmltagregex.source, 'g')
 nameregex = new RegExp(nameregex.source + notinhtmltagregex.source, 'g')
 timeregex = new RegExp(timeregex.source + notinhtmltagregex.source, 'g')
@@ -291,23 +293,15 @@ export function finishView (view) {
       imgPlayiframe(this, 'https://player.vimeo.com/video/')
     })
     .each((key, value) => {
-      const vimeoLink = `https://vimeo.com/${$(value).attr('data-videoid')}`
-      $.ajax({
-        type: 'GET',
-        url: `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(vimeoLink)}`,
-        jsonp: 'callback',
-        dataType: 'jsonp',
-        success (data) {
-          const image = `<img src="${data.thumbnail_url}" />`
+      fetch(`https://vimeo.com/api/v2/video/${$(value).attr('data-videoid')}.json`)
+        .then(response => response.json())
+        .then(data => {
+          const image = `<img src="${data[0].thumbnail_large}" />`
           $(value).prepend(image)
           if (window.viewAjaxCallback) window.viewAjaxCallback()
-        }
-      })
+        })
+        .catch(console.error)
     })
-    // gist
-  view.find('code[data-gist-id]').each((key, value) => {
-    if ($(value).children().length === 0) { $(value).gist(window.viewAjaxCallback) }
-  })
   // sequence diagram
   const sequences = view.find('div.sequence-diagram.raw').removeClass('raw')
   sequences.each((key, value) => {
@@ -328,7 +322,7 @@ export function finishView (view) {
       svg[0].setAttribute('preserveAspectRatio', 'xMidYMid meet')
     } catch (err) {
       $value.unwrap()
-      $value.parent().append(`<div class="alert alert-warning">${escapeHTML(err)}</div>`)
+      $value.parent().append(`<div class="alert alert-warning">${escapeHtml(err)}</div>`)
       console.warn(err)
     }
   })
@@ -353,7 +347,7 @@ export function finishView (view) {
       $value.children().unwrap().unwrap()
     } catch (err) {
       $value.unwrap()
-      $value.parent().append(`<div class="alert alert-warning">${escapeHTML(err)}</div>`)
+      $value.parent().append(`<div class="alert alert-warning">${escapeHtml(err)}</div>`)
       console.warn(err)
     }
   })
@@ -375,7 +369,7 @@ export function finishView (view) {
       })
     } catch (err) {
       $value.unwrap()
-      $value.parent().append(`<div class="alert alert-warning">${escapeHTML(err)}</div>`)
+      $value.parent().append(`<div class="alert alert-warning">${escapeHtml(err)}</div>`)
       console.warn(err)
     }
   })
@@ -398,7 +392,7 @@ export function finishView (view) {
           errormessage = err.str
         }
         $value.unwrap()
-        $value.parent().append(`<div class="alert alert-warning">${escapeHTML(errormessage)}</div>`)
+        $value.parent().append(`<div class="alert alert-warning">${escapeHtml(errormessage)}</div>`)
         console.warn(errormessage)
       }
     })
@@ -421,7 +415,7 @@ export function finishView (view) {
       })
     } catch (err) {
       $value.unwrap()
-      $value.parent().append(`<div class="alert alert-warning">${escapeHTML(err)}</div>`)
+      $value.parent().append(`<div class="alert alert-warning">${escapeHtml(err)}</div>`)
       console.warn(err)
     }
   })
@@ -450,26 +444,14 @@ export function finishView (view) {
   // slideshare
   view.find('div.slideshare.raw').removeClass('raw')
     .each((key, value) => {
-      $.ajax({
-        type: 'GET',
-        url: `https://www.slideshare.net/api/oembed/2?url=https://www.slideshare.net/${$(value).attr('data-slideshareid')}&format=json`,
-        jsonp: 'callback',
-        dataType: 'jsonp',
-        success (data) {
-          const $html = $(data.html)
-          const iframe = $html.closest('iframe')
-          const caption = $html.closest('div')
-          const inner = $('<div class="inner"></div>').append(iframe)
-          const height = iframe.attr('height')
-          const width = iframe.attr('width')
-          const ratio = (height / width) * 100
-          inner.css('padding-bottom', `${ratio}%`)
-          $(value).html(inner).append(caption)
-          if (window.viewAjaxCallback) window.viewAjaxCallback()
-        }
-      })
+      const url = `https://slideshare.com/${$(value).attr('data-slideshareid')}`
+      const inner = $('<a>Slideshare</a>')
+      inner.attr('href', url)
+      inner.attr('rel', 'noopener noreferrer')
+      inner.attr('target', '_blank')
+      $(value).append(inner)
     })
-    // speakerdeck
+  // speakerdeck
   view.find('div.speakerdeck.raw').removeClass('raw')
     .each((key, value) => {
       const url = `https://speakerdeck.com/${$(value).attr('data-speakerdeckid')}`
@@ -479,7 +461,7 @@ export function finishView (view) {
       inner.attr('target', '_blank')
       $(value).append(inner)
     })
-    // pdf
+  // pdf
   view.find('div.pdf.raw').removeClass('raw')
     .each(function (key, value) {
       const url = $(value).attr('data-pdfurl')
@@ -489,7 +471,12 @@ export function finishView (view) {
         height: '400px'
       })
     })
-    // syntax highlighting
+  // iframe
+  view.find('iframe')
+    .each((key, value) => {
+      $(value).attr('credentialless', '').attr('sandbox', '')
+    })
+  // syntax highlighting
   view.find('code.raw').removeClass('raw')
     .each((key, value) => {
       const langDiv = $(value)
@@ -508,24 +495,24 @@ export function finishView (view) {
             value: code
           }
         } else if (reallang === 'haskell' || reallang === 'go' || reallang === 'typescript' || reallang === 'jsx' || reallang === 'gherkin') {
-          code = S(code).unescapeHTML().s
+          code = unescapeHtml(code)
           result = {
             value: Prism.highlight(code, Prism.languages[reallang])
           }
         } else if (reallang === 'tiddlywiki' || reallang === 'mediawiki') {
-          code = S(code).unescapeHTML().s
+          code = unescapeHtml(code)
           result = {
             value: Prism.highlight(code, Prism.languages.wiki)
           }
         } else if (reallang === 'cmake') {
-          code = S(code).unescapeHTML().s
+          code = unescapeHtml(code)
           result = {
             value: Prism.highlight(code, Prism.languages.makefile)
           }
         } else {
           require.ensure([], function (require) {
             const hljs = require('highlight.js')
-            code = S(code).unescapeHTML().s
+            code = unescapeHtml(code)
             const languages = hljs.listLanguages()
             if (!languages.includes(reallang)) {
               result = hljs.highlightAuto(code)
@@ -598,7 +585,7 @@ export function postProcess (code) {
     if (warning && warning.length > 0) {
       warning.text(md.metaError)
     } else {
-      warning = $(`<div id="meta-error" class="alert alert-warning">${escapeHTML(md.metaError)}</div>`)
+      warning = $(`<div id="meta-error" class="alert alert-warning">${escapeHtml(md.metaError)}</div>`)
       result.prepend(warning)
     }
   }
@@ -639,8 +626,6 @@ function generateCleanHTML (view) {
   src.find('*[class=""]').removeAttr('class')
   eles.removeAttr('data-startline data-endline')
   src.find("a[href^='#'][smoothhashscroll]").removeAttr('smoothhashscroll')
-  // remove gist content
-  src.find('code[data-gist-id]').children().remove()
   // disable todo list
   src.find('input.task-list-item-checkbox').attr('disabled', '')
   // replace emoji image path
@@ -836,7 +821,7 @@ export function smoothHashScroll () {
 
 function imgPlayiframe (element, src) {
   if (!$(element).attr('data-videoid')) return
-  const iframe = $("<iframe frameborder='0' webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>")
+  const iframe = $('<iframe style="border: none" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>')
   $(iframe).attr('src', `${src + $(element).attr('data-videoid')}?autoplay=1`)
   $(element).find('img').css('visibility', 'hidden')
   $(element).append(iframe)
@@ -987,7 +972,7 @@ export function scrollToHash () {
 
 function highlightRender (code, lang) {
   if (!lang || /no(-?)highlight|plain|text/.test(lang)) { return }
-  code = S(code).escapeHTML().s
+  code = escapeHtml(code)
   if (lang === 'sequence') {
     return `<div class="sequence-diagram raw">${code}</div>`
   } else if (lang === 'flow') {
@@ -1156,8 +1141,7 @@ const gistPlugin = new Plugin(
 
   (match, utils) => {
     const gistid = match[1]
-    const code = `<code data-gist-id="${gistid}"></code>`
-    return code
+    return `<iframe sandbox class="github-gist-frame" src="https://gist.github.com/${gistid}.pibb"></iframe>`
   }
 )
 // TOC

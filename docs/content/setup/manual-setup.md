@@ -19,7 +19,7 @@
 
 1. Check if you meet the [requirements at the top of this document](#manual-installation).
 2. Download the [latest release](https://hedgedoc.org/latest-release/) and extract it.  
-   <small>Alternatively, you can use Git to clone the repository and checkout a release, e.g. with `git clone -b 1.10.1 https://github.com/hedgedoc/hedgedoc.git`.</small>
+   <small>Alternatively, you can use Git to clone the repository and checkout a release, e.g. with `git clone -b 1.10.4 https://github.com/hedgedoc/hedgedoc.git`.</small>
 3. Enter the directory and execute `bin/setup`, which will install the dependencies and create example configs.
 4. Configure HedgeDoc: To get started, you can use this minimal `config.json`:
    ```json
@@ -61,7 +61,7 @@ If you want to upgrade HedgeDoc from an older version, follow these steps:
    and the latest release.
 2. Fully stop your old HedgeDoc server.
 3. [Download](https://hedgedoc.org/latest-release/) the new release and extract it over the old directory.  
-   <small>If you use Git, you can check out the new tag with e.g. `git fetch origin && git checkout 1.10.1`</small>
+   <small>If you use Git, you can check out the new tag with e.g. `git fetch origin && git checkout 1.10.4`</small>
 5. Run `bin/setup`. This will take care of installing dependencies. It is safe to run on an existing installation.
 6. *:octicons-light-bulb-16: If you used the release tarball for 1.7.0 or newer, this step can be skipped.*  
    Build the frontend bundle by running `yarn install --immutable` and `yarn build`. The extra `yarn install --immutable` is necessary as `bin/setup` does not install the       build dependencies.
@@ -88,6 +88,14 @@ Using the unit file below, you can run HedgeDoc as a systemd service.
     file in the root directory of the HedgeDoc installation**, but create a subfolder like `db`!
     - If you use an external database like PostgreSQL or MariaDB, make sure to add a corresponding
     `After` statement.
+    - `SystemCallFilter=`
+      - More about filtering system calls can be read in the [systemd.exec documentation](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#System%20Call%20Filtering).
+      - If the service does not start please have a look at your systemd-journal (`journalctl -f`) and then try to `systemctl start hedgedoc.service`.
+        - In the systemd-journal you will then see a line with `... kernel: audit: ...`. The important part of this line is `syscall=` (example `syscall=330`).
+        - You can lookup the name of the syscall for the numer on a website like <https://filippo.io/linux-syscall-table/>. Example: 330 is `pkey_alloc`.
+        - Add the name of the syscall at the end of the line of `SystemCallFilter=` (separated by spaces), `systemctl daemon-reload` and then `systemctl restart hedgedoc.service`.
+        - If it does not work have another look at the systemd-journal and repeat the previous steps (add/allow additional needed syscalls).
+        - You can also use groups of syscalls (starting with `@`). See the systemd.exec documentation as it contains a table of `Currently predefined system call sets` you can use. Of course as HedgeDoc is usually exposed to the internet it might be wise to only allow syscalls HedgeDoc really needs depending on your own paranoia. ;-)
 
 ```ini
 [Unit]
@@ -125,7 +133,7 @@ ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 SystemCallArchitectures=native
-SystemCallFilter=@system-service
+SystemCallFilter=@system-service pkey_alloc pkey_mprotect
 
 # You may have to adjust these settings
 User=hedgedoc
