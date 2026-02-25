@@ -1,10 +1,14 @@
 # Release Checklist:
 
+To copy this checklist please go to [this link](https://github.com/hedgedoc/hedgedoc/raw/refs/heads/master/docs/content/dev/release_checklist.md).
+
 ## Preparations:
 
 - [ ] Create release PR(s)
   - [ ] In the main repo (actually only create a local branch to include all the fixes, additions and so on and only push and create a PR after testing)
   - [ ] Release PR in <https://github.com/hedgedoc/container>
+    - [ ] Update version in `.github/workflows/release.yml`
+    - [ ] Update version in `docker-compose.yml`
   - [ ] Release PR in <https://github.com/hedgedoc/social-media>
 - [ ] Security fixes (make sure all available undisclosed security fixes are merged)
 - [ ] Bump the version
@@ -54,6 +58,23 @@ tar cvzf hedgedoc-x.y.z.tar.gz --sort=name --exclude hedgedoc/node_modules --exc
 ```
 
 Use this tar ball to test the following things:
+
+### bin/scripts
+
+- [ ] `bin/setup`
+- [ ] `bin/cleanup`
+- [ ] `bin/manage_users`
+  - [ ] `bin/manage_users --add test@example.com`
+  - [ ] `bin/manage_users --reset test@example.com`
+  - [ ] `bin/manage_users --del test@example.com`
+- [ ] `bin/migrate_from_fs_to_minio`
+  1. Clear the uploads directory.
+  2. Start HedgeDoc 1 with filesystem uploads and a Postgres DB locally.
+  3. Create a new note and upload an image. The image should be now in the uploads directory.
+  4. Stop HedgeDoc. Update the config to configure a Minio instance (minio and s3bucket keys in config.json). Ensure the config on the Minio instance is existing (valid access key and secret, bucket existing and empty).
+  5. Run `bin/migrate_fs_to_minio`.
+  6. Start the HedgeDoc again. The note with the previously uploaded image should now contain the new image URL. The image should load.
+  7. Check that the bucket in Minio contains the uploaded image.
 
 ### Account system
 
@@ -220,7 +241,48 @@ opengraph:
 }
 ```
 - [ ] GitHub
+- [ ] GitLab
 - [ ] Rate-limiting for basic user/password (try to login with e.g. test@example.com and invalid password about 10 to 15 times in a row -> you should receive a message "Too many requests" at some point)
+
+### Docker images
+
+You need to clone the [container repo](https://github.com/hedgedoc/container) and use the commands in the root there.
+
+- [ ] debian
+
+  ```
+  docker buildx build -f debian/Dockerfile -t hedgedoc-local:1.x.y-debian .
+  docker run --rm -p 3000:3000 -e CMD_DOMAIN="localhost" -e CMD_URL_ADDPORT=true -e "CMD_DB_URL=sqlite://:memory:" hedgedoc-local:1.x.y-debian
+  ```
+  The server is then accessable via <http://localhost:3000>. The log should inlcude a line like
+
+  ```
+  127.0.0.1 - - [06/Dec/2025:16:17:51 +0000] "GET /_health HTTP/1.1" 200 14 "-" "hedgedoc-container-healthcheck/1.2"
+  ```
+
+  You should also check `docker ps` for
+
+  ```
+  hedgedoc-local:1.x.y-debian                     "/usr/local/bin/dock…"   29 seconds ago   Up 28 seconds (healthy)
+  ```
+
+- [ ] alpine
+
+  ```
+  docker buildx build -f alpine/Dockerfile -t hedgedoc-local:1.x.y-alpine .
+  docker run --rm -p 3000:3000 -e CMD_DOMAIN="localhost" -e CMD_URL_ADDPORT=true -e "CMD_DB_URL=sqlite://:memory:" hedgedoc-local:1.x.y-alpine
+  ```
+  The server is then accessable via http://localhost:3000. The log should inlcude a line like
+
+  ```
+  127.0.0.1 - - [06/Dec/2025:16:17:51 +0000] "GET /_health HTTP/1.1" 200 14 "-" "hedgedoc-container-healthcheck/1.2"
+  ```
+
+  You should also check `docker ps` for
+
+  ```
+  hedgedoc-local:1.x.y-alpine                     "/usr/local/bin/dock…"   29 seconds ago   Up 28 seconds (healthy)
+  ```
 
 
 ## Release:
@@ -228,12 +290,13 @@ opengraph:
 - [ ] Merge Release PR in main repo
 - [ ] Tag commit with `git tag 1.x.y` and push it
 - [ ] Create release in GitHub and upload tar ball to GitHub
+- [ ] Update placeholders in Security Advisories (if they exist)
 - [ ] Publish Security Advisories (if they exist)
 - [ ] Merge Release PR in <https://github.com/hedgedoc/container>
   -  Wait for the images to be available at <https://quay.io/repository/hedgedoc/hedgedoc?tab=tags>
-- [ ] Update website by running the ["deploy" workflow](https://github.com/hedgedoc/hedgedoc.github.io/actions?query=workflow%3A%22Deploy+to+github+actions+branch%22) in hedgedoc/hedgedoc.github.io
+- [ ] Update website by running the ["deploy" workflow](https://github.com/hedgedoc/hedgedoc.github.io/actions/workflows/deploy.yml) in hedgedoc/hedgedoc.github.io
 - [ ] Update docs.hedgedoc.org by running the ["build" workflow](https://github.com/hedgedoc/docs.hedgedoc.org/actions/workflows/build.yml)
 - [ ] Merge Release PR in <https://github.com/hedgedoc/social-media>
-  - (optional) All people doing the release boost the post 
-- [ ] Share the good news in the Matrix-Chatroom 
+  - (optional) All people doing the release boost the post
+- [ ] Share the good news in the Matrix-Chatroom
 - [ ] Change this release checklist if necessary
