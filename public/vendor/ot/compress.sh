@@ -1,4 +1,4 @@
-uglifyjs --compress --mangle --output ot.min.js \
+yarn uglifyjs --compress --mangle --output ot.min.js \
 ./text-operation.js \
 ./selection.js \
 ./wrapped-operation.js \
@@ -8,3 +8,4 @@ uglifyjs --compress --mangle --output ot.min.js \
 ./socketio-adapter.js \
 ./ajax-adapter.js \
 ./editor-client.js
+echo "Built new ot.min.js"

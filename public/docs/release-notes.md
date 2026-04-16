@@ -1,5 +1,40 @@
 # Release Notes
 
+## <i class="fa fa-tag"></i> 1.10.8 <i class="fa fa-calendar-o"></i> 2026-04-15
+
+### Bugfixes
+
+- Fix data loss when 5+ users edit a document concurrently, caused by the OT client discarding operations during revision gap recovery ([#6342](https://github.com/hedgedoc/hedgedoc/issues/6342))
+- Add defensive null checks to `hex2rgb` to prevent crashes from non-hex color values
+
+### Contributors
+- [Dex Devlon](https://github.com/bxff)
+
+## <i class="fa fa-tag"></i> 1.10.7 <i class="fa fa-calendar-o"></i> 2026-02-24
+
+### Bugfixes
+- Random colors for user's cursors and selections are now always in hex format to avoid conversion errors
+- Correctly close realtime connections if they disconnect during connection creation
+- manage_users CLI does not silently drop errors
+
+## <i class="fa fa-tag"></i> 1.10.6 <i class="fa fa-calendar-o"></i> 2026-02-04
+
+### Security fixes
+
+This release contains two medium severity security fixes:
+- [GHSA-x74j-jmf9-534w](https://github.com/hedgedoc/hedgedoc/security/advisories/GHSA-x74j-jmf9-534w) reports a bug where security headers for upload files were not set correctly.
+- [GHSA-672m-p72w-gw28](https://github.com/hedgedoc/hedgedoc/security/advisories/GHSA-672m-p72w-gw28) reports potential security issues with limited script execution in uploaded SVG files.
+
+Thanks to [@HUSEYNKHANLI](https://github.com/HUSEYNKHANLI) and [@drkim-dev](https://github.com/drkim-dev) for reporting!
+
+### Maintenance
+
+- Dependency updates
+- Enhancements in the documentation at [docs.hedgedoc.org](https://docs.hedgedoc.org)
+
+### Contributors
+- [xenein](https://github.com/xenein) (#6322)
+
 ## <i class="fa fa-tag"></i> 1.10.5 <i class="fa fa-calendar-o"></i> 2025-12-06
 
 This release is just a fix for the docker container. It does not contain any
