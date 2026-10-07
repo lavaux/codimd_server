@@ -2258,6 +2258,10 @@ socket.on('error', function (data) {
     location.href = serverurl + '/403'
   }
 })
+// the note got a new URL
+socket.on('moved', function (data) {
+  location.href = serverurl + '/' + data.url + location.search + location.hash
+})
 socket.on('delete', function () {
   if (personalInfo.login) {
     deleteServerHistory(noteid, function (err, data) {

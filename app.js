@@ -185,7 +185,7 @@ app.use('/default.md', express.static(path.resolve(__dirname, config.defaultNote
 }))
 
 // session
-app.use(useUnless(['/status', '/metrics', '/_health'], session({
+app.use(useUnless(['/status', '/metrics', '/_health', /^\/api\/notes(\/|$)/], session({
   name: config.sessionName,
   secret: config.sessionSecret,
   resave: false, // don't save session if unmodified
@@ -216,7 +216,7 @@ app.use(flash())
 
 // passport
 app.use(passport.initialize())
-app.use(useUnless(['/status', '/metrics', '/_health'], passport.session()))
+app.use(useUnless(['/status', '/metrics', '/_health', /^\/api\/notes(\/|$)/], passport.session()))
 
 // check uri is valid before going further
 app.use(require('./lib/web/middleware/checkURIValid'))
@@ -277,6 +277,7 @@ app.use(require('./lib/web/historyRouter'))
 app.use(require('./lib/web/userRouter').default)
 app.use(require('./lib/web/imageRouter').default)
 app.use(require('./lib/web/adminRouter'))
+app.use(require('./lib/web/apiRouter'))
 app.use(require('./lib/web/note/router'))
 
 // response not found if no any route matxches
