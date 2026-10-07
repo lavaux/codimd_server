@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('hedgedoc/head') %>
+    <style nonce="<%= nonce %>">
+        body { padding-top: 70px; }
+        .admin-table select { max-width: 220px; }
+        .admin-status { min-width: 4em; display: inline-block; }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="<%- serverURL %>/"><i class="fa fa-file-text"></i> HedgeDoc</a>
+                <span class="navbar-text">Admin</span>
+            </div>
+            <p class="navbar-text navbar-right" style="margin-right: 15px;">
+                <span class="label label-danger ui-superuser-badge">superuser</span>
+            </p>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <h3>All notes <small><%= notes.length %></small></h3>
+        <p class="text-muted">Changes apply immediately, including in editors where the note is open.</p>
+        <div class="table-responsive">
+            <table class="table table-condensed table-hover admin-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Last change</th>
+                        <th>Owner</th>
+                        <th>Visibility</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% notes.forEach(function (note) { %>
+                    <tr data-note-id="<%= note.id %>">
+                        <td><a href="<%- serverURL %>/<%= note.url %>" target="_blank" rel="noopener"><%= note.title %></a></td>
+                        <td><%= note.lastchange %></td>
+                        <td>
+                            <select class="form-control input-sm admin-owner">
+                                <% if (!note.ownerId) { %><option value="" selected>(none)</option><% } %>
+                                <% users.forEach(function (user) { %>
+                                <option value="<%= user.id %>"<% if (user.id === note.ownerId) { %> selected<% } %>><%= user.login %> (<%= user.name %>)</option>
+                                <% }) %>
+                                <% if (note.ownerId && !users.some(function (user) { return user.id === note.ownerId })) { %>
+                                <option value="<%= note.ownerId %>" selected><%= note.ownerLogin %></option>
+                                <% } %>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-control input-sm admin-permission">
+                                <% permissions.forEach(function (permission) { %>
+                                <option value="<%= permission %>"<% if (permission === note.permission) { %> selected<% } %>><%= permission %></option>
+                                <% }) %>
+                            </select>
+                        </td>
+                        <td><span class="admin-status"></span></td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script nonce="<%= nonce %>">
+        (function () {
+            function post (row, action, body, select) {
+                var status = row.querySelector('.admin-status')
+                status.className = 'admin-status text-muted'
+                status.textContent = '...'
+                fetch('admin/notes/' + encodeURIComponent(row.dataset.noteId) + '/' + action, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                }).then(function (res) {
+                    return res.json().then(function (data) {
+                        if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status))
+                        status.className = 'admin-status text-success'
+                        status.textContent = 'saved'
+                        select.dataset.saved = select.value
+                    })
+                }).catch(function (err) {
+                    status.className = 'admin-status text-danger'
+                    status.textContent = err.message
+                    select.value = select.dataset.saved
+                })
+            }
+            document.querySelectorAll('tr[data-note-id]').forEach(function (row) {
+                var permission = row.querySelector('.admin-permission')
+                var owner = row.querySelector('.admin-owner')
+                permission.dataset.saved = permission.value
+                owner.dataset.saved = owner.value
+                permission.addEventListener('change', function () {
+                    post(row, 'permission', { permission: permission.value }, permission)
+                })
+                owner.addEventListener('change', function () {
+                    if (!owner.value) return
+                    post(row, 'owner', { userId: owner.value }, owner)
+                })
+            })
+        })()
+    </script>
+</body>
+
+</html>

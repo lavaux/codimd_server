@@ -134,5 +134,8 @@
     "Continue to external page": "Continue to external page",
     "Close": "Close",
     "The provided link is not a valid URL.": "The provided link is not a valid URL.",
-    "The content of that page is unrelated to HedgeDoc. Do not enter your HedgeDoc credentials there.": "The content of that page is unrelated to HedgeDoc. Do not enter your HedgeDoc credentials there."
+    "The content of that page is unrelated to HedgeDoc. Do not enter your HedgeDoc credentials there.": "The content of that page is unrelated to HedgeDoc. Do not enter your HedgeDoc credentials there.",
+    "Admin": "Admin",
+    "Change owner": "Change owner",
+    "You are acting as superuser": "You are acting as superuser"
 }

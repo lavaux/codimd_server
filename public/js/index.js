@@ -2088,6 +2088,35 @@ ui.infobar.delete.click(function () {
 $('.ui-delete-modal-confirm').click(function () {
   socket.emit('delete')
 })
+// change owner, superusers only
+$('.ui-change-owner').click(function () {
+  const $select = $('.ui-change-owner-select')
+  const $error = $('.ui-change-owner-error')
+  $select.empty().prop('disabled', true)
+  $error.hide()
+  $('.change-owner-modal').modal('show')
+  $.get(serverurl + '/admin/users')
+    .done(function (users) {
+      users.forEach(function (user) {
+        $('<option>')
+          .val(user.id)
+          .text(user.login + ' (' + user.name + ')')
+          .prop('selected', user.id === window.owner)
+          .appendTo($select)
+      })
+      $select.prop('disabled', false)
+    })
+    .fail(function () {
+      $error.text('Could not load the list of users.').show()
+    })
+})
+$('.ui-change-owner-confirm').click(function () {
+  const userId = $('.ui-change-owner-select').val()
+  if (userId && userId !== window.owner) {
+    socket.emit('owner', { userId })
+  }
+  $('.change-owner-modal').modal('hide')
+})
 
 function toggleNightMode () {
   const $body = $('body')
@@ -2138,8 +2167,7 @@ function updatePermission (newPermission) {
   }
   if (
     personalInfo.userid &&
-    window.owner &&
-    (personalInfo.userid === window.owner || personalInfo.superuser)
+    ((window.owner && personalInfo.userid === window.owner) || personalInfo.superuser)
   ) {
     label += ' <i class="fa fa-caret-down"></i>'
     ui.infobar.permission.label.removeClass('disabled')
@@ -2166,7 +2194,9 @@ function havePermission () {
     case 'locked':
     case 'private':
     case 'protected':
-      if (!window.owner || personalInfo.userid !== window.owner) {
+      if (personalInfo.login && personalInfo.superuser) {
+        bool = true
+      } else if (!window.owner || personalInfo.userid !== window.owner) {
         bool = false
       } else {
         bool = true
@@ -2174,6 +2204,13 @@ function havePermission () {
       break
   }
   return bool
+}
+
+// show the superuser label and menu entries, and refresh the permission
+// menu, which superusers may use on notes they do not own
+function updateSuperuserUI () {
+  $('.ui-superuser-only').toggle(!!personalInfo.superuser)
+  if (permission !== null) updatePermission(permission)
 }
 // global module workaround
 window.havePermission = havePermission
@@ -2718,6 +2755,7 @@ socket.on('online users', function (data) {
       personalInfo = user
     }
   }
+  updateSuperuserUI()
 })
 socket.on('user status', function (data) {
   if (debug) {

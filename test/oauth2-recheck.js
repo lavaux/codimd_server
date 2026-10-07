@@ -44,14 +44,15 @@ function fakeUser (accessToken) {
   }
 }
 
-function checker (client, clock) {
+function checker (client, clock, options = {}) {
   return createMembershipChecker({
     oauth2Client: client,
     workspacesURL: URL_ORGS,
     workspace: 'Aquila-consortium',
     interval: 1000,
     logger: silentLogger,
-    now: () => clock.time
+    now: () => clock.time,
+    ...options
   })
 }
 
@@ -125,5 +126,63 @@ describe('oauth2 createMembershipChecker', function () {
     const results = await Promise.all([isStillMember(user), isStillMember(user), isStillMember(user)])
     assert.deepStrictEqual(results, [true, true, true])
     assert.strictEqual(client.refreshes, 1)
+  })
+
+  it('refreshes privileges after each successful check', async function () {
+    const clock = { time: 0 }
+    const client = fakeClient({ members: { access: ['Aquila-consortium'] } })
+    let refreshes = 0
+    const isStillMember = checker(client, clock, { refreshPrivileges: () => { refreshes++ } })
+    const user = fakeUser('access')
+
+    await isStillMember(user)
+    await isStillMember(user)
+    assert.strictEqual(refreshes, 1)
+    clock.time = 1000
+    await isStillMember(user)
+    assert.strictEqual(refreshes, 2)
+  })
+
+  it('does not refresh privileges of a user who has left the workspace', async function () {
+    const clock = { time: 0 }
+    const client = fakeClient({ members: { access: ['other'] } })
+    let refreshes = 0
+    const isStillMember = checker(client, clock, { refreshPrivileges: () => { refreshes++ } })
+
+    assert.strictEqual(await isStillMember(fakeUser('access')), false)
+    assert.strictEqual(refreshes, 0)
+  })
+
+  it('keeps the session and retries soon when the privilege refresh fails', async function () {
+    const clock = { time: 0 }
+    const client = fakeClient({ members: { access: ['Aquila-consortium'] } })
+    let refreshes = 0
+    const isStillMember = checker(client, clock, {
+      interval: 15 * 60 * 1000,
+      refreshPrivileges: () => {
+        refreshes++
+        return Promise.reject(new Error('aquila down'))
+      }
+    })
+    const user = fakeUser('access')
+
+    assert.strictEqual(await isStillMember(user), true)
+    clock.time = 59 * 1000
+    await isStillMember(user)
+    assert.strictEqual(refreshes, 1)
+    clock.time = 60 * 1000
+    await isStillMember(user)
+    assert.strictEqual(refreshes, 2)
+  })
+
+  it('skips the membership query without a workspace', async function () {
+    const clock = { time: 0 }
+    const client = fakeClient({ members: {} })
+    let refreshes = 0
+    const isStillMember = checker(client, clock, { workspace: undefined, refreshPrivileges: () => { refreshes++ } })
+
+    assert.strictEqual(await isStillMember(fakeUser('access')), true)
+    assert.strictEqual(client.calls, 0)
+    assert.strictEqual(refreshes, 1)
   })
 })

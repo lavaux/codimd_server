@@ -45,19 +45,20 @@ Package manager is Yarn (Berry, config in `.yarnrc.yml`). Node >= 18; CI tests N
 
 ## Local fork changes
 
-Commit "add whitelisting" on `guilhem/whitelisting` adds:
+The `guilhem/whitelisting` branch adds:
 
-- A `superuser` boolean on `Users` (model plus migration `20240503220100-add-superuser.js`). A superuser may delete notes owned by others (check in `lib/realtime.js` on the `delete` socket event), and the flag is sent to clients in user presence data.
-- `bin/manage_users` options `--adduser <profileid>`, `--deluser <profileid>`, `--superuser <profileid>` and `--list`, which operate by `profileid` rather than email so that OAuth2 users can be pre-provisioned.
-- An organization filter for OAuth2 logins. When `oauth2.workspace` (`CMD_OAUTH2_WORKSPACE`, e.g. `Aquila-consortium`) is set, `userProfile` in `lib/web/auth/oauth2/index.js` lists the user's organizations through the Forgejo API (`oauth2.workspaceURL`, default `<baseURL>/api/v1/user/orgs`) and denies the login unless the user is a member. The paging logic is in `lib/web/auth/oauth2/workspace.js` and is tested in `test/oauth2-workspace.js`.
-
-- Logged-in users are rechecked periodically (`oauth2.workspaceRecheckInterval`, default 15 minutes). `passport.deserializeUser` in `lib/web/auth/index.js` calls the checker from `lib/web/auth/oauth2/recheck.js`, which refreshes expired Forgejo access tokens with the stored refresh token. A user who has left the organization loses their session. A Forgejo outage keeps sessions alive.
-- Only OAuth2 logins are allowed. `lib/config/index.js` forces every other `is<Provider>Enable` flag to false, and `deserializeUser` drops sessions of users whose stored profile is not from OAuth2.
+- **Organization filter.** When `oauth2.workspace` (`CMD_OAUTH2_WORKSPACE`, e.g. `Aquila-consortium`) is set, `userProfile` in `lib/web/auth/oauth2/index.js` lists the user's organizations through the Forgejo API (`oauth2.workspaceURL`, default `<baseURL>/api/v1/user/orgs`) and denies the login unless the user is a member. Paging is in `lib/web/auth/oauth2/workspace.js`.
+- **OAuth2 only.** `lib/config/index.js` forces every other `is<Provider>Enable` flag to false, and `deserializeUser` in `lib/web/auth/index.js` drops sessions of users whose stored profile is not from OAuth2.
+- **Periodic recheck.** `deserializeUser` calls the checker from `lib/web/auth/oauth2/recheck.js` at the first request after login and then every `oauth2.workspaceRecheckInterval` ms (default 15 minutes). It renews expired Forgejo access tokens with the stored refresh token, ends the session of a user who left the organization, and keeps sessions during a Forgejo outage.
+- **Superusers, decided by aquila-website.** The recheck also calls `refreshPrivileges` from `lib/web/auth/oauth2/aquila.js`, which asks aquila-website (`aquila.superuserURL` with Bearer `aquila.token`; endpoint `members.superuser_status` in `~/PROJECTS/aquila/aquila_website`) and caches the answer in `Users.superuser`. If aquila-website is unreachable the cached value is kept. Nothing else sets the flag. Use `isSuperuser(user)` from `lib/utils.js` for checks.
+- **Superuser powers.** Read private notes (both `checkViewPermission` functions), edit locked/protected/private notes (`ifMayEdit`), change any note's permission and owner, delete notes. Note changes go through `setNotePermission` and `setNoteOwner` in `lib/realtime.js`, which update the DB and any open editors. They are used by the socket events `permission`/`owner` and by `lib/web/adminRouter.js` (`/admin`, `/admin/users`, `POST /admin/notes/:noteId/{permission,owner}` with JSON bodies only).
+- **UI.** Elements with class `ui-superuser-only` (red "superuser" label, Admin links, "Change owner" entry) are shown by `updateSuperuserUI()` in `public/js/index.js` and by `public/js/cover.js` from `/me`.
+- **`bin/manage_users`** options `--adduser <profileid>`, `--deluser <profileid>` and `--list` operate by `profileid` rather than email.
 
 Note that `passportGeneralCallback` still uses `findOrCreate`, so pre-provisioning with `manage_users` alone does not block unknown users. The organization filter does.
 
 ## Conventions
 
-- Code style is eslint with `eslint-config-standard` (no semicolons, 2-space indent, single quotes). Some lines from the fork commit violate this and will fail `yarn run eslint`.
+- Code style is eslint with `eslint-config-standard` (no semicolons, 2-space indent, single quotes). `bin/` is not linted.
 - Commit messages follow Conventional Commits (`fix(scope): ...`, `chore(deps): ...`). Upstream requires a DCO `Signed-off-by` line (see `CONTRIBUTING.md`).
 - Developer docs are in `docs/content/dev/` (getting started, webpack, OT, API with `openapi.yml`).

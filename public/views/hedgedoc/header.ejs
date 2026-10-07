@@ -22,6 +22,8 @@
                 <i class="fa fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu list" role="menu" aria-labelledby="menu">
+                <li role="presentation" class="ui-superuser-only" style="display: none;"><a role="menuitem" tabindex="-1" href="<%- serverURL %>/admin"><span class="label label-danger">superuser</span> <%= __('Admin') %></a>
+                </li>
                 <% if (!disableNoteCreation) { %>
                 <li role="presentation"><a role="menuitem" class="ui-new" tabindex="-1" href="<%- serverURL %>/new" target="_blank" rel="noopener"><i class="fa fa-plus fa-fw"></i> <%= __('New') %></a>
                 </li>
@@ -114,6 +116,11 @@
             </li>
         </ul>
         <ul class="nav navbar-nav navbar-right" style="padding:0;">
+            <li class="ui-superuser-only" style="display: none;">
+                <a href="<%- serverURL %>/admin" title="<%= __('You are acting as superuser') %>">
+                    <span class="label label-danger">superuser</span>
+                </a>
+            </li>
             <% if (!disableNoteCreation) { %>
             <li>
                 <a href="<%- serverURL %>/new" target="_blank" rel="noopener" class="ui-new">
@@ -131,6 +138,9 @@
                     <%= __('Menu') %> <i class="fa fa-caret-down"></i>
                 </a>
                 <ul class="dropdown-menu list" role="menu" aria-labelledby="menu">
+                    <li role="presentation" class="ui-superuser-only" style="display: none;"><a role="menuitem" tabindex="-1" href="<%- serverURL %>/admin"><i class="fa fa-wrench fa-fw"></i> <%= __('Admin') %></a>
+                    </li>
+                    <li class="divider ui-superuser-only" style="display: none;"></li>
                     <li class="dropdown-header"><%= __('Extra') %></li>
                     <li role="presentation"><a role="menuitem" class="ui-extra-revision" tabindex="-1" data-toggle="modal" data-target="#revisionModal"><i class="fa fa-history fa-fw"></i> <%= __('Revision') %></a>
                     </li>

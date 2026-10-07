@@ -74,6 +74,7 @@ function pageInit () {
       if (data.photo) $('.ui-avatar').prop('src', data.photo).show()
       else $('.ui-avatar').prop('src', '').hide()
       $('.ui-name').html(data.name)
+      $('.ui-superuser-only').toggle(!!data.superuser)
       $('.ui-signout').show()
       $('.ui-history').click()
       parseServerToHistory(historyList, parseHistoryCallback)
@@ -84,6 +85,7 @@ function pageInit () {
       $('.ui-welcome').hide()
       $('.ui-avatar').prop('src', '').hide()
       $('.ui-name').html('')
+      $('.ui-superuser-only').hide()
       $('.ui-signout').hide()
       parseStorageToHistory(historyList, parseHistoryCallback)
     }
