@@ -273,6 +273,85 @@ paths:
             'text/plain':
               example: my-note
 
+  /api/notes:
+    get:
+      tags:
+        - admin
+      summary: Returns every note.
+      description: The list is returned as a JSON array, most recently changed note first. Tags are read from the content of each note at each request.
+      security:
+        - aquilaToken: []
+      responses:
+        200:
+          description: The list of all notes
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminNote'
+        401:
+          $ref: '#/components/responses/AdminError'
+        404:
+          $ref: '#/components/responses/AdminError'
+
+  /api/notes/{note}:
+    patch:
+      tags:
+        - admin
+      summary: Changes the permission, owner or URL of a note.
+      description: The changes are applied in the order url, owner, permission. They are not transactional, so if a later change fails, the earlier ones stay applied. Editors in which the note is open are updated at once.
+      security:
+        - aquilaToken: []
+      parameters:
+        - name: note
+          in: path
+          required: true
+          description: The id or the url of the note
+          content:
+            'text/plain':
+              example: meeting-notes
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                permission:
+                  type: string
+                  enum: [freely, editable, limited, locked, protected, private]
+                  description: New permission. freely is refused when anonymous users may neither view nor edit notes.
+                owner:
+                  type: string
+                  description: Forgejo login of the new owner, compared case-insensitively. The user must have logged in at least once.
+                url:
+                  type: string
+                  nullable: true
+                  pattern: '^[A-Za-z0-9_~-][A-Za-z0-9._~-]{0,254}$'
+                  description: New alias of the note. It must not be a note id or a path used by the server. null or an empty string removes the alias.
+            example:
+              permission: locked
+              owner: jdoe
+              url: meeting-notes
+      responses:
+        200:
+          description: The updated note
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/AdminNote'
+        400:
+          $ref: '#/components/responses/AdminError'
+        401:
+          $ref: '#/components/responses/AdminError'
+        404:
+          $ref: '#/components/responses/AdminError'
+        409:
+          $ref: '#/components/responses/AdminError'
+
   /me:
     get:
       tags:
@@ -449,7 +528,55 @@ paths:
                   disconnectSocketQueueLength:
                     type: integer
 
+components:
+  securitySchemes:
+    aquilaToken:
+      type: http
+      scheme: bearer
+      description: The value of aquila.token (CMD_AQUILA_TOKEN). Without a configured token the endpoints answer 404.
+  schemas:
+    AdminNote:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Internal id of the note
+        url:
+          type: string
+          description: Path of the note relative to the server URL, i.e. its alias or its encoded id
+        title:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        permission:
+          type: string
+          enum: [freely, editable, limited, locked, protected, private]
+        owner:
+          type: string
+          nullable: true
+          description: Forgejo login of the owner
+        createdAt:
+          type: string
+          format: date-time
+        lastchangeAt:
+          type: string
+          format: date-time
+  responses:
+    AdminError:
+      description: '400: invalid body. 401: missing or wrong token. 404: no token configured, or unknown note or user. 409: url already in use.'
+      content:
+        'application/json':
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+
 tags:
+  - name: admin
+    description: These endpoints list every note and change the permission, owner or URL of any note. They require the Bearer token aquila.token.
   - name: note
     description: These endpoints create notes, return information about them or export them.
   - name: user

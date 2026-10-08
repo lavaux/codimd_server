@@ -20,6 +20,74 @@ You have to replace *\<NOTE\>* with either the alias or id of a note you want to
 | `/<NOTE>/revision/<REVISION-ID>`               | `GET`       | **Returns the revision of the note with some metadata.**<br>The revision is returned as a JSON object with the content of the note and the authorship.                                                                                                       |
 | `/<NOTE>/gist`                                 | `GET`       | **Creates a new GitHub Gist with the note's content.**<br>If [GitHub integration](../configuration.md#github-login) is configured, the user will be redirected to GitHub and a new Gist with the content of the note will be created.               |
 
+## Note administration
+These endpoints list every note on the server and change the permission, owner or URL of any note.
+They are meant for scripts and do not use the session cookie.
+Each request must carry the header `Authorization: Bearer <TOKEN>`, where `<TOKEN>` is the value of `aquila.token` ([`CMD_AQUILA_TOKEN`](../configuration.md#oauth2-login)).
+If no token is configured, both endpoints answer HTTP 404.
+
+| Endpoint            | HTTP-Method | Description                                                                                                                                                                                                                                                                                                  |
+| ------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/api/notes`        | `GET`       | **Returns every note.**<br>The list is returned as a JSON array, most recently changed note first. Each entry contains `id`, `url`, `title`, `tags`, `permission`, `owner`, `createdAt` and `lastchangeAt`.                                                                                                 |
+| `/api/notes/<NOTE>` | `PATCH`     | **Changes the permission, owner or URL of a note.**<br>The body must be a JSON object (`Content-Type: application/json`) with at least one of the fields `permission`, `owner` and `url`. The updated note is returned as an entry of the listing above. `<NOTE>` is the `id` or the `url` of the note. |
+
+### Listing entries
+- `id`: internal id of the note.
+- `url`: path of the note relative to the server URL. This is the alias of the note if it has one, and its encoded id otherwise.
+- `title`: title of the note, or `Untitled`.
+- `tags`: tags read from the content of the note at each request.
+- `permission`: one of `freely`, `editable`, `limited`, `locked`, `protected` and `private`.
+- `owner`: Forgejo login of the owner, or `null`.
+- `createdAt`, `lastchangeAt`: ISO 8601 dates.
+
+```shell
+curl -H "Authorization: Bearer $TOKEN" https://md.example.org/api/notes
+```
+
+```json
+[
+  {
+    "id": "6b1f0c2e-8d4a-4b8e-9c3f-2a7d5e1f0b9c",
+    "url": "meeting-notes",
+    "title": "Meeting notes",
+    "tags": ["aquila", "minutes"],
+    "permission": "editable",
+    "owner": "jdoe",
+    "createdAt": "2026-01-12T09:30:00.000Z",
+    "lastchangeAt": "2026-10-01T14:02:11.000Z"
+  }
+]
+```
+
+### Changing a note
+The `PATCH` body accepts the following fields. Any other field is refused with HTTP 400.
+
+- `permission`: new permission of the note. `freely` is refused when anonymous users may neither view nor edit notes.
+- `owner`: Forgejo login of the new owner, compared case-insensitively. The user must have logged in at least once.
+- `url`: new alias of the note. It may contain letters, digits and `.`, `_`, `~`, `-`, has at most 255 characters and must not start with a dot. It must not be a note id or a path used by the server. `null` or `""` removes the alias.
+
+```shell
+curl -X PATCH \
+     -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"permission": "locked", "owner": "jdoe", "url": "meeting-notes"}' \
+     https://md.example.org/api/notes/6b1f0c2e-8d4a-4b8e-9c3f-2a7d5e1f0b9c
+```
+
+The changes are applied in the order `url`, `owner`, `permission`.
+They are not transactional: if a later change fails, the earlier ones stay applied.
+Editors in which the note is open are updated at once. When the URL changes, they reload the note at its new URL.
+
+### Errors
+Errors are returned as a JSON object `{"error": "<message>"}` with one of the following statuses.
+
+| Status | Meaning                                                                                       |
+| ------ | --------------------------------------------------------------------------------------------- |
+| 400    | Invalid body: not a JSON object, empty, unknown field, invalid permission, owner or URL.      |
+| 401    | Missing or wrong token.                                                                       |
+| 404    | No token configured, or unknown note or user.                                                 |
+| 409    | The URL is already used by another note or by a file in the documents directory.              |
+
 ## User / History
 These endpoints return information about the current logged-in user and it's note history. If no user is logged-in, the most of this requests will fail with either a HTTP 403 or a JSON object containing `{"status":"forbidden"}`.
 
