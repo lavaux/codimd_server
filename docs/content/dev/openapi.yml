@@ -277,6 +277,7 @@ paths:
     get:
       tags:
         - admin
+      operationId: listNotes
       summary: Returns every note.
       description: The list is returned as a JSON array, most recently changed note first. Tags are read from the content of each note at each request.
       security:
@@ -299,6 +300,7 @@ paths:
     patch:
       tags:
         - admin
+      operationId: updateNote
       summary: Changes the permission, owner or URL of a note.
       description: The changes are applied in the order url, owner, permission. They are not transactional, so if a later change fails, the earlier ones stay applied. Editors in which the note is open are updated at once.
       security:
@@ -330,7 +332,7 @@ paths:
                 url:
                   type: string
                   nullable: true
-                  pattern: '^[A-Za-z0-9_~-][A-Za-z0-9._~-]{0,254}$'
+                  pattern: '^([A-Za-z0-9_~-][A-Za-z0-9._~-]{0,254})?$'
                   description: New alias of the note. It must not be a note id or a path used by the server. null or an empty string removes the alias.
             example:
               permission: locked
