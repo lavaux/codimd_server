@@ -407,6 +407,37 @@ small .dropdown a:focus, small .dropdown a:hover {
   visibility: hidden;
 }
 
+/* wide view: let the text use the window, keeping a column for the affixed toc */
+@media screen {
+    .markdown-body.wide:not(.slides),
+    .ui-infobar.wide {
+        max-width: none;
+        width: auto;
+        margin-left: 40px;
+        margin-right: calc(max(15vw, 160px) + 40px);
+    }
+}
+
+.ui-infobar .ui-wide.active {
+    color: #333;
+}
+
+@media screen and (max-width: 767px) {
+    .markdown-body.wide:not(.slides),
+    .ui-infobar.wide {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+}
+
+/* slide notes keep their narrow layout, so the infobar must stay aligned with them.
+   Kept as its own rule so that browsers without :has() still apply the rules above. */
+.ui-infobar.wide:has(~ .markdown-body.slides) {
+    max-width: 758px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 @media print {
     div, table, img, pre, blockquote {
         page-break-inside: avoid !important;

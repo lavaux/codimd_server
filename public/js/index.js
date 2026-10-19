@@ -669,6 +669,9 @@ $(document).ready(function () {
     ui.toolbar.night.addClass('active')
   }
 
+  // Re-enable wide view
+  applyWideView()
+
   // showup
   $().showUp('.navbar', {
     upClass: 'navbar-hide',
@@ -930,9 +933,11 @@ function checkTocStyle () {
   ui.toc.toc.css('right', right + 'px')
   // affix toc left
   let newbool
+  const markdownParent = ui.area.markdown.parent()
   const rightMargin =
-    (ui.area.markdown.parent().outerWidth() - ui.area.markdown.outerWidth()) /
-    2
+    markdownParent.offset().left +
+    markdownParent.outerWidth() -
+    (ui.area.markdown.offset().left + ui.area.markdown.outerWidth())
   // for ipad or wider device
   if (rightMargin >= 133) {
     newbool = true
@@ -1057,6 +1062,7 @@ function changeMode (type) {
       ui.area.view.show()
       break
   }
+  applyWideView()
   // save mode to url
   if (history.replaceState && window.loaded) {
     history.replaceState(
@@ -2056,6 +2062,13 @@ ui.toolbar.both.click(function () {
 ui.toolbar.night.click(function () {
   toggleNightMode()
 })
+
+// return false so that Bootstrap's button plugin does not toggle the
+// 'active' class of the clicked label a second time
+ui.toolbar.wide.click(function () {
+  if (appState.currentMode === modeType.view) toggleWideView()
+  return false
+})
 // permission
 // freely
 ui.infobar.permission.freely.click(function () {
@@ -2124,6 +2137,23 @@ function toggleNightMode () {
   $body.toggleClass('night', !isActive)
   ui.toolbar.night.toggleClass('active', !isActive)
   store.set('nightMode', !isActive)
+}
+
+// wide view only applies to the view mode
+function applyWideView () {
+  const isView = appState.currentMode === modeType.view
+  const wantsWide = store.get('wideView') === true
+  ui.area.markdown.toggleClass('wide', wantsWide && isView)
+  ui.area.view.find('.ui-infobar').toggleClass('wide', wantsWide && isView)
+  ui.toolbar.wide
+    .toggleClass('active', wantsWide)
+    .toggleClass('disabled', !isView)
+}
+
+function toggleWideView () {
+  store.set('wideView', store.get('wideView') !== true)
+  applyWideView()
+  windowResizeInner()
 }
 
 function emitPermission (_permission) {

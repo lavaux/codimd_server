@@ -17,6 +17,8 @@ import {
 
 import { preventXSS } from './render'
 
+import store from 'store'
+
 require('../css/extra.css')
 require('../css/slide-preview.css')
 require('../css/site.css')
@@ -56,6 +58,16 @@ if (md.meta.type && md.meta.type === 'slide') {
   const result = postProcess(rendered)
   markdown.html(result.html())
 }
+// wide view, shared with the editor through the store
+const wideToggle = $('.ui-wide')
+function applyWideView () {
+  const isWide = store.get('wideView') === true
+  markdown.toggleClass('wide', isWide)
+  $('.ui-infobar').toggleClass('wide', isWide)
+  wideToggle.toggleClass('active', isWide)
+}
+applyWideView()
+
 $(document.body).show()
 
 removeDOMEvents(markdown)
@@ -104,7 +116,8 @@ function windowResize () {
   toc.css('right', `${right}px`)
   // affix toc left
   let newbool
-  const rightMargin = (markdown.parent().outerWidth() - markdown.outerWidth()) / 2
+  const markdownParent = markdown.parent()
+  const rightMargin = markdownParent.offset().left + markdownParent.outerWidth() - (markdown.offset().left + markdown.outerWidth())
   // for ipad or wider device
   if (rightMargin >= 133) {
     newbool = true
@@ -121,6 +134,13 @@ function windowResize () {
 }
 $(window).resize(() => {
   windowResize()
+})
+wideToggle.click(e => {
+  e.preventDefault()
+  store.set('wideView', store.get('wideView') !== true)
+  applyWideView()
+  windowResize()
+  generateScrollspy()
 })
 $(document).ready(() => {
   windowResize()
