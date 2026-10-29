@@ -354,6 +354,333 @@ paths:
         409:
           $ref: '#/components/responses/AdminError'
 
+  /api/v1/notes:
+    get:
+      tags:
+        - personal
+      operationId: listMyNotes
+      summary: Lists the notes the user owns and the notes of their history they may view.
+      security:
+        - personalToken: []
+      responses:
+        200:
+          description: The notes, most recently changed first
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminNote'
+        401:
+          $ref: '#/components/responses/PersonalError'
+        503:
+          $ref: '#/components/responses/PersonalError'
+    post:
+      tags:
+        - personal
+      operationId: createMyNote
+      summary: Creates a note owned by the user.
+      security:
+        - personalToken: []
+      parameters:
+        - name: url
+          in: query
+          required: false
+          description: Alias of the new note. Requires FreeURL-mode.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          'text/markdown':
+            schema:
+              type: string
+          'text/plain':
+            schema:
+              type: string
+      responses:
+        201:
+          description: The new note
+          headers:
+            ETag:
+              description: Identifies the content, for If-Match
+              schema:
+                type: string
+            Location:
+              description: URL of the note in this API
+              schema:
+                type: string
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/AdminNote'
+        400:
+          $ref: '#/components/responses/PersonalError'
+        401:
+          $ref: '#/components/responses/PersonalError'
+        403:
+          $ref: '#/components/responses/PersonalError'
+        409:
+          $ref: '#/components/responses/PersonalError'
+        413:
+          $ref: '#/components/responses/PersonalError'
+        415:
+          $ref: '#/components/responses/PersonalError'
+        503:
+          $ref: '#/components/responses/PersonalError'
+
+  /api/v1/notes/{note}:
+    get:
+      tags:
+        - personal
+      operationId: getMyNote
+      summary: Returns a note with its content.
+      security:
+        - personalToken: []
+      parameters:
+        - name: note
+          in: path
+          required: true
+          description: The id, url or short id of the note
+          schema:
+            type: string
+      responses:
+        200:
+          description: The note with its content, or the raw Markdown with Accept text/markdown
+          headers:
+            ETag:
+              description: Identifies the content, for If-Match
+              schema:
+                type: string
+          content:
+            'application/json':
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/AdminNote'
+                  - type: object
+                    properties:
+                      content:
+                        type: string
+            'text/markdown':
+              schema:
+                type: string
+        401:
+          $ref: '#/components/responses/PersonalError'
+        404:
+          $ref: '#/components/responses/PersonalError'
+        503:
+          $ref: '#/components/responses/PersonalError'
+    patch:
+      tags:
+        - personal
+      operationId: updateMyNote
+      summary: Changes the permission or the URL of a note. Owner or superuser only.
+      security:
+        - personalToken: []
+      parameters:
+        - name: note
+          in: path
+          required: true
+          description: The id, url or short id of the note
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                permission:
+                  type: string
+                  enum: [freely, editable, limited, locked, protected, private]
+                url:
+                  type: string
+                  nullable: true
+                  pattern: '^([A-Za-z0-9_~-][A-Za-z0-9._~-]{0,254})?$'
+                  description: New alias. A new alias requires FreeURL-mode. null or an empty string removes it.
+      responses:
+        200:
+          description: The updated note
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/AdminNote'
+        400:
+          $ref: '#/components/responses/PersonalError'
+        401:
+          $ref: '#/components/responses/PersonalError'
+        403:
+          $ref: '#/components/responses/PersonalError'
+        404:
+          $ref: '#/components/responses/PersonalError'
+        409:
+          $ref: '#/components/responses/PersonalError'
+        503:
+          $ref: '#/components/responses/PersonalError'
+    delete:
+      tags:
+        - personal
+      operationId: deleteMyNote
+      summary: Deletes a note. Owner or superuser only, for a note that has an owner.
+      security:
+        - personalToken: []
+      parameters:
+        - name: note
+          in: path
+          required: true
+          description: The id, url or short id of the note
+          schema:
+            type: string
+      responses:
+        204:
+          description: The note was deleted
+        401:
+          $ref: '#/components/responses/PersonalError'
+        403:
+          $ref: '#/components/responses/PersonalError'
+        404:
+          $ref: '#/components/responses/PersonalError'
+        503:
+          $ref: '#/components/responses/PersonalError'
+
+  /api/v1/notes/{note}/content:
+    put:
+      tags:
+        - personal
+      operationId: replaceMyNoteContent
+      summary: Replaces the content of a note.
+      description: Editors in which the note is open receive the change at once.
+      security:
+        - personalToken: []
+      parameters:
+        - name: note
+          in: path
+          required: true
+          description: The id, url or short id of the note
+          schema:
+            type: string
+        - name: If-Match
+          in: header
+          required: true
+          description: ETag of the content being replaced, or * to overwrite it. A weak W/ prefix is ignored.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          'text/markdown':
+            schema:
+              type: string
+          'text/plain':
+            schema:
+              type: string
+      responses:
+        204:
+          description: The content was replaced
+          headers:
+            ETag:
+              description: Identifies the content, for If-Match
+              schema:
+                type: string
+        401:
+          $ref: '#/components/responses/PersonalError'
+        403:
+          $ref: '#/components/responses/PersonalError'
+        404:
+          $ref: '#/components/responses/PersonalError'
+        412:
+          $ref: '#/components/responses/PersonalError'
+        413:
+          $ref: '#/components/responses/PersonalError'
+        415:
+          $ref: '#/components/responses/PersonalError'
+        428:
+          $ref: '#/components/responses/PersonalError'
+        503:
+          $ref: '#/components/responses/PersonalError'
+
+  /api/v1/notes/{note}/content/append:
+    post:
+      tags:
+        - personal
+      operationId: appendMyNoteContent
+      summary: Appends text on a new line at the end of a note.
+      security:
+        - personalToken: []
+      parameters:
+        - name: note
+          in: path
+          required: true
+          description: The id, url or short id of the note
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          'text/markdown':
+            schema:
+              type: string
+          'text/plain':
+            schema:
+              type: string
+      responses:
+        204:
+          description: The text was appended
+          headers:
+            ETag:
+              description: Identifies the content, for If-Match
+              schema:
+                type: string
+        401:
+          $ref: '#/components/responses/PersonalError'
+        403:
+          $ref: '#/components/responses/PersonalError'
+        404:
+          $ref: '#/components/responses/PersonalError'
+        413:
+          $ref: '#/components/responses/PersonalError'
+        415:
+          $ref: '#/components/responses/PersonalError'
+        503:
+          $ref: '#/components/responses/PersonalError'
+
+  /me/api-token:
+    post:
+      tags:
+        - user
+      operationId: generateApiToken
+      summary: Generates or rotates the personal API token of the logged-in user.
+      description: The previous token stops working. The token is returned only in this response. Requires a session and Content-Type application/json.
+      responses:
+        200:
+          description: The new token
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                  expiresAt:
+                    type: string
+                    format: date-time
+        415:
+          description: The request is not application/json
+    delete:
+      tags:
+        - user
+      operationId: revokeApiToken
+      summary: Revokes the personal API token of the logged-in user.
+      responses:
+        204:
+          description: The token was revoked
+
   /me:
     get:
       tags:
@@ -380,6 +707,23 @@ paths:
                   photo:
                     type: string
                     description: An url to the online stored user profile photo
+                  apiToken:
+                    type: object
+                    nullable: true
+                    description: State of the personal API token, null without token
+                    properties:
+                      createdAt:
+                        type: string
+                        format: date-time
+                      expiresAt:
+                        type: string
+                        format: date-time
+                      lastUsedAt:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      expired:
+                        type: boolean
 
   /me/export:
     get:
@@ -536,6 +880,10 @@ components:
       type: http
       scheme: bearer
       description: The value of aquila.token (CMD_AQUILA_TOKEN). Without a configured token the endpoints answer 404.
+    personalToken:
+      type: http
+      scheme: bearer
+      description: Personal API token of a user, generated on the main page. Valid for 30 days.
   schemas:
     AdminNote:
       type: object
@@ -566,6 +914,15 @@ components:
           type: string
           format: date-time
   responses:
+    PersonalError:
+      description: '400 invalid body; 401 missing, wrong, expired or revoked token; 403 not allowed; 404 unknown or hidden note; 409 url in use; 412 If-Match mismatch; 413 too long; 415 not text; 428 If-Match missing; 503 access check failed.'
+      content:
+        'application/json':
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
     AdminError:
       description: '400: invalid body. 401: missing or wrong token. 404: no token configured, or unknown note or user. 409: url already in use.'
       content:
@@ -579,6 +936,8 @@ components:
 tags:
   - name: admin
     description: These endpoints list every note and change the permission, owner or URL of any note. They require the Bearer token aquila.token.
+  - name: personal
+    description: These endpoints let a user list, read, create, change and delete notes with the rights they have in the web interface. They require the user's personal API token as Bearer token.
   - name: note
     description: These endpoints create notes, return information about them or export them.
   - name: user

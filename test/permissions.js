@@ -50,3 +50,56 @@ describe('isSuperuser', function () {
     assert.strictEqual(isSuperuser(null), false)
   })
 })
+
+describe('note permission rules', function () {
+  const { mayView, mayEdit, mayManage, mayDelete } = require('../lib/permissions')
+  const guest = null
+  const member = { id: 'member' }
+  const own = { id: 'owner' }
+  const admin = { id: 'admin', superuser: true }
+  const users = { guest, member, own, admin }
+
+  // expected results for [guest, member, owner, superuser]
+  const viewTable = {
+    freely: [true, true, true, true],
+    editable: [true, true, true, true],
+    limited: [false, true, true, true],
+    locked: [true, true, true, true],
+    protected: [false, true, true, true],
+    private: [false, false, true, true],
+    bogus: [false, false, false, false]
+  }
+  const editTable = {
+    freely: [true, true, true, true],
+    editable: [false, true, true, true],
+    limited: [false, true, true, true],
+    locked: [false, false, true, true],
+    protected: [false, false, true, true],
+    private: [false, false, true, true],
+    bogus: [false, false, false, false]
+  }
+
+  for (const [rule, table] of [[mayView, viewTable], [mayEdit, editTable]]) {
+    for (const permission of Object.keys(table)) {
+      it(`${rule.name} on a ${permission} note`, function () {
+        const got = Object.values(users).map(user => rule(user, permission, 'owner'))
+        assert.deepStrictEqual(got, table[permission])
+      })
+    }
+  }
+
+  it('lets only the owner and superusers manage a note', function () {
+    assert.deepStrictEqual(Object.values(users).map(user => mayManage(user, 'owner')), [false, false, true, true])
+    assert.strictEqual(mayManage(admin, null), true)
+    assert.strictEqual(mayManage(member, null), false)
+  })
+
+  it('does not let anyone delete a note without owner', function () {
+    assert.deepStrictEqual(Object.values(users).map(user => mayDelete(user, 'owner')), [false, false, true, true])
+    assert.strictEqual(mayDelete(admin, null), false)
+  })
+
+  it('hides a note with an unknown permission from the HTTP check', function () {
+    assert.strictEqual(checkViewPermission(request(superuser), { permission: 'bogus', ownerId: 'admin' }), false)
+  })
+})

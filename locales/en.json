@@ -138,5 +138,12 @@
     "The content of that page is unrelated to HedgeDoc. Do not enter your HedgeDoc credentials there.": "The content of that page is unrelated to HedgeDoc. Do not enter your HedgeDoc credentials there.",
     "Admin": "Admin",
     "Change owner": "Change owner",
-    "You are acting as superuser": "You are acting as superuser"
+    "You are acting as superuser": "You are acting as superuser",
+    "Personal API token": "Personal API token",
+    "API token": "API token",
+    "The token gives scripts access to the notes API (/api/v1) with your rights. It is valid for 30 days.": "The token gives scripts access to the notes API (/api/v1) with your rights. It is valid for 30 days.",
+    "Copy the token now: it will not be shown again.": "Copy the token now: it will not be shown again.",
+    "Copy": "Copy",
+    "Revoke": "Revoke",
+    "Generate token": "Generate token"
 }

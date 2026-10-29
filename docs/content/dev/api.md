@@ -88,6 +88,81 @@ Errors are returned as a JSON object `{"error": "<message>"}` with one of the fo
 | 404    | No token configured, or unknown note or user.                                                 |
 | 409    | The URL is already used by another note or by a file in the documents directory.              |
 
+## Personal notes API
+These endpoints let a user script their own notes with the rights they have in the web interface.
+They do not use the session cookie.
+Each request must carry the header `Authorization: Bearer <TOKEN>`, where `<TOKEN>` is the user's personal API token.
+
+### Getting a token
+After logging in, click **API token** at the top of the main page.
+The dialog generates a token, rotates it (the previous token stops working at once) or revokes it.
+The token is shown only once, right after it is generated: the server stores only its SHA-256 hash.
+A token is valid for 30 days after its generation. After that, requests get HTTP 401 with `{"error": "token expired"}` and a new token must be generated.
+A token also stops working when its user may no longer log in, for example after leaving the organization.
+
+The dialog uses these session endpoints, which accept only `Content-Type: application/json`:
+
+| Endpoint        | HTTP-Method | Description                                                                                                            |
+| --------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `/me/api-token` | `POST`      | **Generates or rotates the token.**<br>Returns `{"token", "createdAt", "expiresAt"}`. The token is not shown again.     |
+| `/me/api-token` | `DELETE`    | **Revokes the token.**                                                                                                 |
+
+`GET /me` reports the token state in the field `apiToken`: `null`, or `{"createdAt", "expiresAt", "lastUsedAt", "expired"}`.
+
+### Endpoints
+`<NOTE>` is the id, the url (alias or encoded id) or the short id of a note.
+
+| Endpoint                            | HTTP-Method | Description                                                                                                                                                                                                                                                       |
+| ----------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/v1/notes`                     | `GET`       | **Lists the user's notes.**<br>The notes the user owns and the notes in their history that they may view, most recently changed first, as entries like those of `/api/notes`, without content.                                                                    |
+| `/api/v1/notes`                     | `POST`      | **Creates a note owned by the user.**<br>The body is the Markdown content (`Content-Type: text/markdown` or `text/plain`). `?url=<ALIAS>` gives the note an alias if [FreeURL-mode](../configuration.md#users-and-privileges) is enabled. Answers 201 with the entry, `Location` and `ETag`. |
+| `/api/v1/notes/<NOTE>`              | `GET`       | **Returns the note.**<br>The entry with its `content` as JSON, or the raw Markdown with `Accept: text/markdown`. The `ETag` header identifies the content.                                                                                                      |
+| `/api/v1/notes/<NOTE>/content`      | `PUT`       | **Replaces the content.**<br>The body is the new Markdown. `If-Match` is required: the `ETag` of the content being replaced, or `*` to overwrite whatever is there. Answers 204 with the new `ETag`.                                                              |
+| `/api/v1/notes/<NOTE>/content/append` | `POST`    | **Appends to the content.**<br>The body is added on a new line at the end. No `If-Match` is needed. Answers 204 with the new `ETag`.                                                                                                                            |
+| `/api/v1/notes/<NOTE>`              | `PATCH`     | **Changes the permission or the URL.**<br>JSON body with `permission` and/or `url` (`null` removes the alias). Owner or superuser only. A new alias requires FreeURL-mode.                                                                                     |
+| `/api/v1/notes/<NOTE>`              | `DELETE`    | **Deletes the note.**<br>Owner or superuser only, and only for a note that has an owner. Editors showing the note are closed.                                                                                                                                  |
+
+The view and edit rules are those of the web interface, superuser rights included.
+A note the user may not view is reported as missing (404).
+Changes to a note that is open in a browser reach its editors at once, like an edit by another user.
+Carriage returns are removed from Markdown bodies.
+
+```shell
+TOKEN=hdt_...
+SERVER=https://md.example.org
+
+# create a note and read it back with its ETag
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: text/markdown" \
+     --data-binary @minutes.md "$SERVER/api/v1/notes"
+curl -i -H "Authorization: Bearer $TOKEN" -H "Accept: text/markdown" "$SERVER/api/v1/notes/<NOTE>"
+
+# replace the content only if nobody changed it since the read
+curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: text/markdown" \
+     -H 'If-Match: "<ETAG>"' --data-binary @minutes.md "$SERVER/api/v1/notes/<NOTE>/content"
+
+# append a line
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: text/plain" \
+     --data-binary "- $(date -I): backup done" "$SERVER/api/v1/notes/<NOTE>/content/append"
+```
+
+Proxies that compress responses may turn the `ETag` into a weak one (`W/"..."`); `If-Match` accepts both forms.
+
+### Personal API errors
+Errors are returned as a JSON object `{"error": "<message>"}`.
+
+| Status | Meaning                                                                                                   |
+| ------ | --------------------------------------------------------------------------------------------------------- |
+| 400    | Invalid JSON body, unknown field, invalid permission or URL.                                              |
+| 401    | Missing, wrong, expired or revoked token, or the user may no longer log in.                               |
+| 403    | The user may view the note but not do this, or FreeURL-mode is disabled.                                  |
+| 404    | Unknown note, or a note the user may not view.                                                            |
+| 409    | The URL is already used.                                                                                  |
+| 412    | `If-Match` does not match the current content.                                                            |
+| 413    | The content would exceed the maximum note length.                                                         |
+| 415    | The body is not `text/markdown` or `text/plain`.                                                          |
+| 428    | `PUT .../content` without `If-Match`.                                                                     |
+| 503    | The access of the user could not be checked (for example, the login provider is unreachable). Retry later. |
+
 ## User / History
 These endpoints return information about the current logged-in user and it's note history. If no user is logged-in, the most of this requests will fail with either a HTTP 403 or a JSON object containing `{"status":"forbidden"}`.
 

@@ -444,3 +444,82 @@ $('.signin-modal').on('shown.bs.modal', function () {
     fieldOpenID.focus()
   }
 })
+
+// personal API token
+function formatTokenDate (date) {
+  return date ? moment(date).format('llll') : '-'
+}
+
+function showApiTokenState (token) {
+  const status = $('.ui-api-token-status')
+  if (!token) {
+    status.text('No token yet.')
+    $('.ui-api-token-generate').text('Generate token')
+    $('.ui-api-token-revoke').hide()
+    return
+  }
+  const state = token.expired ? 'Expired on ' : 'Valid until '
+  status.text(`${state}${formatTokenDate(token.expiresAt)}. Created ${formatTokenDate(token.createdAt)}, last used ${formatTokenDate(token.lastUsedAt)}.`)
+  $('.ui-api-token-generate').text(token.expired ? 'Generate a new token' : 'Rotate token')
+  $('.ui-api-token-revoke').show()
+}
+
+function showApiTokenError (message) {
+  $('.ui-api-token-error').text(message).toggle(!!message)
+}
+
+// /me is fetched again, since the profile cached at login has stale dates
+function refreshApiToken () {
+  return $.get(`${serverurl}/me`).done(data => showApiTokenState(data.apiToken))
+}
+
+function requestApiToken (method) {
+  return fetch(`${serverurl}/me/api-token`, {
+    method,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}'
+  }).then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return res.status === 204 ? null : res.json()
+  })
+}
+
+$('.api-token-modal').on('show.bs.modal', function () {
+  $('.ui-api-token-new').hide()
+  $('.ui-api-token-value').val('')
+  showApiTokenError('')
+  refreshApiToken()
+})
+
+$('.ui-api-token-generate').click(function () {
+  if ($('.ui-api-token-revoke').is(':visible') &&
+      !window.confirm('Scripts using the current token will stop working. Continue?')) return
+  showApiTokenError('')
+  requestApiToken('POST').then(data => {
+    $('.ui-api-token-value').val(data.token)
+    $('.ui-api-token-new').show()
+    showApiTokenState({ createdAt: data.createdAt, expiresAt: data.expiresAt, lastUsedAt: null, expired: false })
+  }).catch(err => showApiTokenError(`Cannot generate the token: ${err.message}`))
+})
+
+$('.ui-api-token-revoke').click(function () {
+  if (!window.confirm('Revoke the token? Scripts using it will stop working.')) return
+  showApiTokenError('')
+  requestApiToken('DELETE').then(() => {
+    $('.ui-api-token-new').hide()
+    $('.ui-api-token-value').val('')
+    showApiTokenState(null)
+  }).catch(err => showApiTokenError(`Cannot revoke the token: ${err.message}`))
+})
+
+$('.ui-api-token-copy').click(function () {
+  const value = $('.ui-api-token-value').val()
+  if (!value) return
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(value).catch(() => $('.ui-api-token-value').select())
+  } else {
+    $('.ui-api-token-value').select()
+    document.execCommand('copy')
+  }
+})

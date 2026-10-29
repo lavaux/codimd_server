@@ -25,6 +25,7 @@
                                 <% if (!disableNoteCreation) { %>
                                 <a type="button" href="<%- serverURL %>/new" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> <%= __('New note') %></a>
                                 <% } %>
+                                <button type="button" class="btn btn-sm btn-default ui-api-token" data-toggle="modal" data-target=".api-token-modal" title="<%= __('Personal API token') %>"><i class="fa fa-key"></i> <span class="hidden-xs"><%= __('API token') %></span></button>
                                 <a href="<%- serverURL %>/admin" class="ui-superuser-only" style="display: none;" title="<%= __('You are acting as superuser') %>"><span class="label label-danger">superuser</span></a>
                                 <span class="ui-profile dropdown pull-right">
                                     <button id="profileLabel" class="btn btn-sm btn-link ui-profile-label" style="padding-right: 0;" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -184,6 +185,37 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-default ui-delete-user-modal-cancel" data-dismiss="modal"><%= __('Cancel') %></button>
                 <a type="button" class="btn btn-danger" href="<%- serverURL %>/me/delete/<%- deleteToken %>"><%= __('Yes, do it!') %></a>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- personal API token modal -->
+<div class="modal fade api-token-modal" tabindex="-1" role="dialog" aria-labelledby="apiTokenModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="apiTokenModalLabel"><%= __('Personal API token') %></h4>
+            </div>
+            <div class="modal-body">
+                <p><%= __('The token gives scripts access to the notes API (/api/v1) with your rights. It is valid for 30 days.') %></p>
+                <p class="ui-api-token-status text-muted"></p>
+                <div class="ui-api-token-new" style="display: none;">
+                    <div class="alert alert-warning"><%= __('Copy the token now: it will not be shown again.') %></div>
+                    <div class="input-group">
+                        <input type="text" class="form-control ui-api-token-value" readonly>
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-default ui-api-token-copy" title="<%= __('Copy') %>"><i class="fa fa-clipboard"></i></button>
+                        </span>
+                    </div>
+                </div>
+                <p class="ui-api-token-error text-danger" style="display: none;"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger pull-left ui-api-token-revoke" style="display: none;"><%= __('Revoke') %></button>
+                <button type="button" class="btn btn-default" data-dismiss="modal"><%= __('Close') %></button>
+                <button type="button" class="btn btn-primary ui-api-token-generate"><%= __('Generate token') %></button>
             </div>
         </div>
     </div>
