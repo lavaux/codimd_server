@@ -7,6 +7,8 @@
         body { padding-top: 70px; }
         .admin-table select { max-width: 220px; }
         .admin-status { min-width: 4em; display: inline-block; }
+        .admin-filter { margin-bottom: 10px; }
+        .admin-filter select { max-width: 320px; margin: 0 5px; }
     </style>
 </head>
 
@@ -23,8 +25,25 @@
         </div>
     </nav>
     <div class="container-fluid">
+        <% if (ownerFilter) { %>
+        <h3>Notes of <%= ownerLabel %> <small><%= notes.length %> of <%= totalNotes %></small></h3>
+        <% } else { %>
         <h3>All notes <small><%= notes.length %></small></h3>
-        <p class="text-muted">Changes apply immediately, including in editors where the note is open.</p>
+        <% } %>
+        <form method="get" action="<%- serverURL %>/admin" class="form-inline admin-filter">
+            <label for="admin-owner-filter">Owner</label>
+            <select id="admin-owner-filter" name="owner" class="form-control input-sm">
+                <option value=""<% if (!ownerFilter) { %> selected<% } %>>All owners (<%= totalNotes %>)</option>
+                <% ownerChoices.forEach(function (choice) { %>
+                <option value="<%= choice.value %>"<% if (choice.value === ownerFilter) { %> selected<% } %>><%= choice.label %> (<%= choice.count %>)</option>
+                <% }) %>
+                <% if (ownerFilter && !ownerChoices.some(function (choice) { return choice.value === ownerFilter })) { %>
+                <option value="<%= ownerFilter %>" selected>(unknown owner)</option>
+                <% } %>
+            </select>
+            <button type="submit" class="btn btn-default btn-sm">Filter</button>
+        </form>
+        <p class="text-muted">Changes apply immediately, including in editors where the note is open.<% if (ownerFilter) { %> Reload to refresh the filter after changing an owner.<% } %></p>
         <div class="table-responsive">
             <table class="table table-condensed table-hover admin-table">
                 <thead>
@@ -72,7 +91,7 @@
                 var status = row.querySelector('.admin-status')
                 status.className = 'admin-status text-muted'
                 status.textContent = '...'
-                fetch('admin/notes/' + encodeURIComponent(row.dataset.noteId) + '/' + action, {
+                fetch(<%- JSON.stringify(serverURL + '/admin/notes/') %> + encodeURIComponent(row.dataset.noteId) + '/' + action, {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
