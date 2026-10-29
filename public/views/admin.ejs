@@ -9,6 +9,7 @@
         .admin-status { min-width: 4em; display: inline-block; }
         .admin-filter { margin-bottom: 10px; }
         .admin-filter select { max-width: 320px; margin: 0 5px; }
+        .admin-tag { display: inline-block; margin-bottom: 2px; font-weight: normal; }
     </style>
 </head>
 
@@ -41,6 +42,7 @@
                 <option value="<%= ownerFilter %>" selected>(unknown owner)</option>
                 <% } %>
             </select>
+            <% if (sort) { %><input type="hidden" name="sort" value="<%= sort %>"><% } %>
             <button type="submit" class="btn btn-default btn-sm">Filter</button>
         </form>
         <p class="text-muted">Changes apply immediately, including in editors where the note is open.<% if (ownerFilter) { %> Reload to refresh the filter after changing an owner.<% } %></p>
@@ -49,7 +51,8 @@
                 <thead>
                     <tr>
                         <th>Title</th>
-                        <th>Last change</th>
+                        <th><% if (sort === 'tags') { %>Tags <i class="fa fa-sort-asc"></i><% } else { %><a href="<%= sortLinks.tags %>">Tags</a><% } %></th>
+                        <th><% if (sort === 'tags') { %><a href="<%= sortLinks.lastchange %>">Last change</a><% } else { %>Last change <i class="fa fa-sort-desc"></i><% } %></th>
                         <th>Owner</th>
                         <th>Visibility</th>
                         <th></th>
@@ -59,6 +62,7 @@
                     <% notes.forEach(function (note) { %>
                     <tr data-note-id="<%= note.id %>">
                         <td><a href="<%- serverURL %>/<%= note.url %>" target="_blank" rel="noopener"><%= note.title %></a></td>
+                        <td><% note.tags.forEach(function (tag) { %><span class="label label-default admin-tag"><%= tag %></span> <% }) %></td>
                         <td><%= note.lastchange %></td>
                         <td>
                             <select class="form-control input-sm admin-owner">

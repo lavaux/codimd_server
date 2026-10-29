@@ -86,3 +86,62 @@ describe('admin owner filter', function () {
     })
   })
 })
+
+describe('admin tag sort', function () {
+  const { sortOf, sortByTags, adminLink } = require('../lib/web/adminRouter')
+  const titles = notes => notes.map(note => note.title)
+
+  describe('sortOf', function () {
+    it('accepts only the string tags', function () {
+      assert.strictEqual(sortOf({}), '')
+      assert.strictEqual(sortOf(undefined), '')
+      assert.strictEqual(sortOf({ sort: 'tags' }), 'tags')
+      assert.strictEqual(sortOf({ sort: 'title' }), '')
+      assert.strictEqual(sortOf({ sort: ['tags'] }), '')
+    })
+  })
+
+  describe('sortByTags', function () {
+    it('orders by first tag, ignoring case, untagged last', function () {
+      const notes = [
+        { title: 'none', tags: [] },
+        { title: 'beta', tags: ['Beta'] },
+        { title: 'alpha', tags: ['alpha'] }
+      ]
+      assert.deepStrictEqual(titles(sortByTags(notes)), ['alpha', 'beta', 'none'])
+    })
+
+    it('compares numbers numerically', function () {
+      const notes = [{ title: '10', tags: ['10'] }, { title: '9', tags: ['9'] }]
+      assert.deepStrictEqual(titles(sortByTags(notes)), ['9', '10'])
+    })
+
+    it('puts a prefix first and handles spaces', function () {
+      const notes = [
+        { title: 'a b', tags: ['a b'] },
+        { title: 'a,c', tags: ['a', 'c'] },
+        { title: 'a', tags: ['a'] },
+        { title: 'a,b', tags: ['a', 'b'] }
+      ]
+      assert.deepStrictEqual(titles(sortByTags(notes)), ['a', 'a,b', 'a,c', 'a b'])
+    })
+
+    it('keeps the input order for equal tags and does not mutate the input', function () {
+      const notes = [
+        { title: 'first', tags: ['x'] },
+        { title: 'other', tags: [] },
+        { title: 'second', tags: ['X'] }
+      ]
+      assert.deepStrictEqual(titles(sortByTags(notes)), ['first', 'second', 'other'])
+      assert.deepStrictEqual(titles(notes), ['first', 'other', 'second'])
+    })
+  })
+
+  describe('adminLink', function () {
+    it('keeps the owner filter and encodes it', function () {
+      assert.strictEqual(adminLink('https://x.org', '', ''), 'https://x.org/admin')
+      assert.strictEqual(adminLink('https://x.org', '', 'tags'), 'https://x.org/admin?sort=tags')
+      assert.strictEqual(adminLink('https://x.org', 'a&b', 'tags'), 'https://x.org/admin?owner=a%26b&sort=tags')
+    })
+  })
+})

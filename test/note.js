@@ -136,3 +136,23 @@ describe('Note.extractMeta', function () {
     assert.strictEqual(result.meta.level1.level2.level3, 'deep value')
   })
 })
+
+describe('Note.parseNoteTags', function () {
+  it('returns no tags for content without tags', function () {
+    assert.deepStrictEqual(Note.parseNoteTags('# Title\n\nBody'), [])
+    assert.deepStrictEqual(Note.parseNoteTags(''), [])
+  })
+
+  it('reads string and number tags from the frontmatter', function () {
+    assert.deepStrictEqual(Note.parseNoteTags('---\ntags: a, b , a\n---\nBody'), ['a', 'b'])
+    assert.deepStrictEqual(Note.parseNoteTags('---\ntags: 42\n---\nBody'), ['42'])
+  })
+
+  it('reads tags from an h6 heading', function () {
+    assert.deepStrictEqual(Note.parseNoteTags('# Title\n###### tags: `x` `y z`\nBody'), ['x', 'y z'])
+  })
+
+  it('ignores the word tags in plain text', function () {
+    assert.deepStrictEqual(Note.parseNoteTags('Some tags: `x` in a paragraph'), [])
+  })
+})
